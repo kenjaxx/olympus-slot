@@ -15,6 +15,7 @@
       <label for="playerName">Player</label>
       <input id="playerName" value="guest" />
       <button id="loadPlayer">Load</button>
+      <button id="muteBtn" title="Toggle sound">🔊</button>
     </div>
 
     <div class="card">
@@ -35,7 +36,14 @@
 
       <div id="freespinsbadge" class="badge">Free spins: <span id="fscount">0</span> left</div>
 
-      <div id="reels" class="reels"></div>
+      <div class="reels-wrap">
+        <div id="reels" class="reels"></div>
+        <div id="scatterFlash" class="scatter-flash"></div>
+        <div id="winBanner" class="win-banner">
+          <span id="winBannerLabel">WIN</span>
+          <span id="winBannerAmount">0</span>
+        </div>
+      </div>
 
       <p id="msg" class="msg">Land 4+ temples to trigger free spins</p>
 

@@ -13,6 +13,7 @@ h1 { text-align: center; margin-bottom: 0.2rem; }
 .player-row { display: flex; gap: 8px; margin-bottom: 1rem; align-items: center; }
 .player-row input { flex: 1; padding: 8px; border-radius: 8px; border: 1px solid #4a3a6e; background: #241a3d; color: white; }
 .player-row button { padding: 8px 14px; border-radius: 8px; border: 1px solid #4a3a6e; background: #2e2152; color: white; cursor: pointer; }
+#muteBtn { flex: 0 0 auto; padding: 8px 12px; font-size: 15px; }
 
 .card { background: #241a3d; border-radius: 16px; padding: 1.25rem; border: 1px solid #382a5c; }
 
@@ -34,6 +35,11 @@ h1 { text-align: center; margin-bottom: 0.2rem; }
   margin-bottom: 8px;
 }
 
+.reels-wrap {
+  position: relative;
+  margin-bottom: 1rem;
+}
+
 .reels {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
@@ -41,22 +47,184 @@ h1 { text-align: center; margin-bottom: 0.2rem; }
   background: #150e26;
   border-radius: 8px;
   padding: 10px;
-  margin-bottom: 1rem;
   height: 240px;
 }
 
+/* ---- Card tiles (replace emoji symbols) ---- */
 .cell {
-  font-size: 24px;
-  text-align: center;
-  background: #241a3d;
+  position: relative;
   border-radius: 6px;
   height: 54px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: opacity 0.15s;
+  overflow: hidden;
+  transition: box-shadow 0.2s, transform 0.2s, background 0.2s;
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
-.cell.orb { color: #ffd166; }
+
+.card-letter {
+  font-family: Georgia, "Times New Roman", serif;
+  font-weight: 700;
+  font-size: 22px;
+}
+
+/* Tier colors — background tint + letter color per symbol */
+.card-grape { background: #2c2350; }
+.card-grape .card-letter { color: #a99bf2; }
+
+.card-wine { background: #3a1f24; }
+.card-wine .card-letter { color: #e88fa3; }
+
+.card-urn { background: #1f3a34; }
+.card-urn .card-letter { color: #6fe0bd; }
+
+.card-vase { background: #3a2a14; }
+.card-vase .card-letter { color: #f0b96b; }
+
+.card-gem { background: #142f3a; }
+.card-gem .card-letter { color: #6fc4f0; }
+
+.card-crown { background: #3a3414; }
+.card-crown .card-letter { color: #f0d96b; }
+
+/* Scatter (temple) card — special treatment */
+.card-temple {
+  background: #2a1440;
+  border: 1px solid #ffd16655;
+}
+.temple-icon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.temple-icon .roof {
+  width: 30px;
+  height: 4px;
+  background: #ffd166;
+  border-radius: 1px;
+}
+.temple-icon .pillars {
+  display: flex;
+  gap: 3px;
+}
+.temple-icon .pillars span {
+  width: 3px;
+  height: 14px;
+  background: #ffd166;
+  display: block;
+}
+.temple-icon .base {
+  width: 30px;
+  height: 3px;
+  background: #ffd166;
+  border-radius: 1px;
+}
+
+/* Near-miss tease (3 scatters landed) */
+.card-temple.tease {
+  animation: teasePulse 0.35s ease-in-out infinite alternate;
+}
+@keyframes teasePulse {
+  from { box-shadow: 0 0 0 1px #ffd16655; }
+  to   { box-shadow: 0 0 14px 3px #ffd166cc, 0 0 0 2px #ffd166; }
+}
+
+/* Full scatter trigger (4+ scatters) */
+.card-temple.ignite {
+  animation: ignitePulse 0.4s ease-in-out infinite alternate;
+}
+@keyframes ignitePulse {
+  from { box-shadow: 0 0 10px 2px #ffd166aa; transform: scale(1); }
+  to   { box-shadow: 0 0 26px 8px #ffd166ee, 0 0 0 2px #ffffff; transform: scale(1.08); }
+}
+
+/* Multiplier orb card, shown briefly on a hit cell */
+.card-orb { background: #241a3d; }
+.orb-icon {
+  width: 16px;
+  height: 26px;
+  background: #ffd166;
+  clip-path: polygon(60% 0%, 0% 55%, 45% 55%, 35% 100%, 100% 40%, 55% 40%);
+}
+
+/* Flashed on cells during a tumble hit */
+.cell.hit {
+  background: #3a2a63;
+  box-shadow: 0 0 0 2px #ffd166 inset, 0 0 14px 2px rgba(255, 209, 102, 0.55);
+  transform: scale(1.06);
+}
+
+/* Screen shake for big wins / scatter trigger */
+.reels-wrap.shake {
+  animation: shake 0.35s ease-in-out;
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+
+/* Full white flash for the scatter trigger moment */
+.scatter-flash {
+  position: absolute;
+  inset: 0;
+  background: white;
+  opacity: 0;
+  pointer-events: none;
+  border-radius: 8px;
+}
+.scatter-flash.flash {
+  animation: scatterFlashAnim 0.5s ease-out;
+}
+@keyframes scatterFlashAnim {
+  0%   { opacity: 0; }
+  15%  { opacity: 0.85; }
+  100% { opacity: 0; }
+}
+
+/* Win banner overlay */
+.win-banner {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: rgba(15, 10, 30, 0.72);
+  border-radius: 8px;
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.85);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.win-banner.show {
+  opacity: 1;
+  transform: scale(1);
+}
+.win-banner.big #winBannerLabel {
+  color: #ff9f6b;
+  animation: pulseBig 0.6s ease-in-out infinite alternate;
+}
+#winBannerLabel {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #ffd166;
+}
+#winBannerAmount {
+  font-size: 28px;
+  font-weight: 700;
+  color: white;
+}
+@keyframes pulseBig {
+  from { transform: scale(1); }
+  to { transform: scale(1.12); }
+}
 
 .msg { text-align: center; font-size: 13px; color: #b7abd6; min-height: 18px; margin: 0 0 1rem; }
 

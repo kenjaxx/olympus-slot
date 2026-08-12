@@ -35,16 +35,26 @@ function randomGrid() {
 function resolveSpin(bet) {
   let totalWin = 0;
   let totalMult = 1;
-  let scatterTriggered = false;
-  let freeSpinsAwarded = 0;
   const rounds = [];
 
-  // scatter check (base game only)
-  if (Math.random() < WIN_RATE * 0.12) {
-    scatterTriggered = true;
-    freeSpinsAwarded = 10;
+  // ---- Scatter count for this spin ----
+  // This drives both the free-spin trigger AND the near-miss tension effect
+  // on the client (3 scatters = "so close", 4+ = trigger).
+  let scatterCount;
+  const scatterRoll = Math.random();
+  if (scatterRoll < WIN_RATE * 0.12) {
+    scatterCount = Math.random() < 0.5 ? 4 : 5; // triggers free spins
+  } else if (scatterRoll < WIN_RATE * 0.12 + 0.18) {
+    scatterCount = 3; // near miss — builds anticipation without paying out
+  } else if (scatterRoll < WIN_RATE * 0.12 + 0.18 + 0.25) {
+    scatterCount = 2;
+  } else {
+    scatterCount = Math.random() < 0.5 ? 1 : 0;
   }
+  const scatterTriggered = scatterCount >= 4;
+  const freeSpinsAwarded = scatterTriggered ? 10 : 0;
 
+  // ---- Tumble/cluster rounds ----
   let roundNum = 0;
   while (roundNum < 3) {
     const willWin = Math.random() < WIN_RATE;
@@ -70,8 +80,18 @@ function resolveSpin(bet) {
 
   const finalWin = Math.round(totalWin * totalMult);
 
+  // Build the visual grid and place the scatter symbols in it so what the
+  // player sees actually matches scatterCount.
+  const grid = randomGrid();
+  const scatterIdxs = new Set();
+  while (scatterIdxs.size < scatterCount) {
+    scatterIdxs.add(Math.floor(Math.random() * ROWS * COLS));
+  }
+  scatterIdxs.forEach((i) => (grid[i] = SCATTER));
+
   return {
-    grid: randomGrid(), // purely visual — the animation just needs symbols to show
+    grid,
+    scatterCount,
     scatterTriggered,
     freeSpinsAwarded,
     rounds,
