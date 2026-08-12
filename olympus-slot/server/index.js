@@ -13,10 +13,11 @@ const players = {
   // "dad": { balance: 1000, freeSpins: 0 },
 };
 
-// The client now has a free-form bet slider/input, so the server enforces
-// the sane range instead of trusting whatever number arrives.
+// The client bet is free-form, so the server still enforces a sane floor
+// and rejects garbage input — but there's no upper cap. Bigger bets pay out
+// on exactly the same ratio as small ones (see game.js — every payout is a
+// straight multiple of `bet`), so nothing about the odds changes with size.
 const MIN_BET = 10;
-const MAX_BET = 2000;
 
 function getPlayer(name) {
   if (!players[name]) {
@@ -36,8 +37,8 @@ app.post("/api/spin", (req, res) => {
   const { player, bet } = req.body;
   const numericBet = Math.round(Number(bet));
 
-  if (!player || !Number.isFinite(numericBet) || numericBet < MIN_BET || numericBet > MAX_BET) {
-    return res.status(400).json({ error: `player and a bet between ${MIN_BET} and ${MAX_BET} are required` });
+  if (!player || !Number.isFinite(numericBet) || !Number.isSafeInteger(numericBet) || numericBet < MIN_BET) {
+    return res.status(400).json({ error: `player and a bet of at least ${MIN_BET} are required` });
   }
 
   const p = getPlayer(player);

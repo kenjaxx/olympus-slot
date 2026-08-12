@@ -4,14 +4,41 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Olympus Slot (play money)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/base.css" />
   <link rel="stylesheet" href="css/cards.css" />
   <link rel="stylesheet" href="css/fx.css" />
 </head>
 <body>
   <div class="app">
-    <h1>Olympus Slot</h1>
-    <p class="subtitle">Play-money demo — no real currency involved</p>
+
+    <header class="temple-header">
+      <svg class="sprig sprig-left" viewBox="0 0 30 60" width="20" height="40"><use href="#laurel-sprig"/></svg>
+      <div class="temple-title">
+        <h1>Olympus Slot</h1>
+        <p class="subtitle">Play-money demo — no real currency involved</p>
+      </div>
+      <svg class="sprig sprig-right" viewBox="0 0 30 60" width="20" height="40"><use href="#laurel-sprig"/></svg>
+    </header>
+
+    <div class="gold-divider"><span class="divider-ornament"></span></div>
+
+    <!-- Reusable laurel sprig, referenced via <use> so the artwork lives in one place -->
+    <svg width="0" height="0" style="position:absolute">
+      <symbol id="laurel-sprig" viewBox="0 0 30 60" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <path d="M15 58 C15 40 15 20 15 2" />
+        <ellipse cx="9" cy="10" rx="6" ry="3" transform="rotate(-30 9 10)"/>
+        <ellipse cx="21" cy="10" rx="6" ry="3" transform="rotate(30 21 10)"/>
+        <ellipse cx="8" cy="22" rx="6" ry="3" transform="rotate(-30 8 22)"/>
+        <ellipse cx="22" cy="22" rx="6" ry="3" transform="rotate(30 22 22)"/>
+        <ellipse cx="7" cy="34" rx="6" ry="3" transform="rotate(-30 7 34)"/>
+        <ellipse cx="23" cy="34" rx="6" ry="3" transform="rotate(30 23 34)"/>
+        <ellipse cx="6" cy="46" rx="6" ry="3" transform="rotate(-30 6 46)"/>
+        <ellipse cx="24" cy="46" rx="6" ry="3" transform="rotate(30 24 46)"/>
+      </symbol>
+    </svg>
 
     <div class="player-row">
       <label for="playerName">Player</label>
@@ -43,6 +70,8 @@
         </div>
       </div>
 
+      <p class="net-line" id="netLine"></p>
+
       <div id="freespinsbadge" class="badge">Free spins: <span id="fscount">0</span> left</div>
       <div id="autospinbadge" class="badge autospin-badge">Auto spin: <span id="autospinsleft">0</span> left</div>
 
@@ -50,7 +79,11 @@
         <div id="reels" class="reels"></div>
         <div id="scatterFlash" class="scatter-flash"></div>
         <div id="winBanner" class="win-banner">
-          <span id="winBannerLabel">WIN</span>
+          <div class="win-laurel">
+            <svg class="wreath-left" viewBox="0 0 30 60" width="22" height="44"><use href="#laurel-sprig"/></svg>
+            <span id="winBannerLabel">WIN</span>
+            <svg class="wreath-right" viewBox="0 0 30 60" width="22" height="44"><use href="#laurel-sprig"/></svg>
+          </div>
           <span id="winBannerAmount">0</span>
         </div>
       </div>
@@ -60,7 +93,7 @@
       <div class="bet-row">
         <label>Bet</label>
         <input type="range" min="10" max="500" step="10" value="20" id="bet" />
-        <input type="number" min="10" max="2000" step="10" value="20" id="betNumber" />
+        <input type="number" min="10" step="10" value="20" id="betNumber" />
       </div>
       <div class="bet-quick-row">
         <button class="quickbtn" id="betHalf">½</button>

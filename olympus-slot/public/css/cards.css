@@ -1,29 +1,29 @@
-.reels-wrap {
-  position: relative;
-  margin-bottom: 1rem;
-}
+.reels-wrap { position: relative; margin-bottom: 1rem; }
 
 .reels {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   gap: 6px;
-  background: #150e26;
-  border-radius: 8px;
+  background: var(--ink);
+  border-radius: 10px;
   padding: 10px;
   height: 240px;
+  border: 1px solid var(--panel-line);
+  box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
 }
 
+/* ---- Card tile: parchment with a thin gold foil edge ---- */
 .cell {
   position: relative;
   border-radius: 6px;
   height: 54px;
   overflow: hidden;
   transition: box-shadow 0.2s, transform 0.2s, background 0.2s;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  background: #f4f1ea;
+  border: 1px solid var(--gold-deep);
+  background: linear-gradient(160deg, var(--parchment), #e6dcbd);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.5);
 }
 
-/* ---- Standard playing-card face ---- */
 .pcard {
   position: relative;
   width: 100%;
@@ -35,80 +35,65 @@
 
 .pcard-rank {
   position: absolute;
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--font-display);
   font-weight: 700;
   font-size: 13px;
   line-height: 1;
-  color: inherit;
 }
 .pcard-rank-tl { top: 4px; left: 5px; }
 .pcard-rank-br { bottom: 4px; right: 5px; transform: rotate(180deg); }
 
-.pcard-suit-tl {
-  position: absolute;
-  top: 16px;
-  left: 4px;
-}
-.pcard-suit-br {
-  position: absolute;
-  bottom: 16px;
-  right: 4px;
-  transform: rotate(180deg);
-}
-.pcard-suit-center {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
+.pcard-suit-tl { position: absolute; top: 16px; left: 4px; }
+.pcard-suit-br { position: absolute; bottom: 16px; right: 4px; transform: rotate(180deg); }
+.pcard-suit-center { display: flex; align-items: center; justify-content: center; }
+.suit-icon { display: block; }
 
-.pcard-spade,
-.pcard-club {
-  color: #232323;
-}
-.pcard-heart,
-.pcard-diamond {
-  color: #c0392b;
-}
+/* Suit colors — Aegean blue for spades/clubs, terracotta for hearts/diamonds,
+   instead of flat black/red, to stay inside the palette. */
+.pcard-spade { color: var(--aegean); }
+.pcard-heart { color: var(--terracotta); }
 
 /* ---- Scatter (coin) card ---- */
 .pcard-scatter {
   flex-direction: column;
-  gap: 2px;
-  background: linear-gradient(160deg, #2a1440, #3a1f5c);
+  gap: 3px;
+  background: radial-gradient(circle at 50% 30%, #2a1f4d, var(--ink) 75%);
 }
 .coin {
-  width: 26px;
-  height: 26px;
+  width: 27px;
+  height: 27px;
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #ffe9b0, #ffd166 60%, #c9971f 100%);
+  background: radial-gradient(circle at 35% 30%, var(--gold-bright), var(--gold) 60%, var(--gold-deep) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 0 0 2px #ffd16655;
+  box-shadow: 0 0 0 2px rgba(212,175,55,0.4), 0 2px 6px rgba(0,0,0,0.4);
 }
 .coin-dollar {
-  font-family: Georgia, serif;
+  font-family: var(--font-display);
   font-weight: 700;
   font-size: 14px;
-  color: #7a5300;
+  color: #5c4315;
 }
 .scatter-label {
-  font-size: 8px;
+  font-family: var(--font-body);
+  font-size: 7.5px;
   font-weight: 700;
-  letter-spacing: 0.5px;
-  color: #ffd166;
+  letter-spacing: 0.6px;
+  color: var(--gold-bright);
 }
 
 /* ---- Wild multiplier-orb card ---- */
 .pcard-wild {
   flex-direction: column;
   gap: 1px;
-  background: linear-gradient(160deg, #241a3d, #3a2a63);
-  border: 1px solid #ffd166aa;
+  background: linear-gradient(160deg, var(--panel-2), var(--panel));
+  border: 1px solid var(--gold);
 }
 .wild-label {
-  font-size: 8px;
+  font-family: var(--font-body);
+  font-size: 7.5px;
   font-weight: 700;
-  letter-spacing: 0.5px;
-  color: #ffd166;
+  letter-spacing: 0.6px;
+  color: var(--gold-bright);
 }

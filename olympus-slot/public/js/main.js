@@ -14,6 +14,7 @@
   const loadPlayerBtn = document.getElementById("loadPlayer");
   const muteBtn = document.getElementById("muteBtn");
   const winBanner = document.getElementById("winBanner");
+  const netLineEl = document.getElementById("netLine");
 
   let currentPlayer = "guest";
 
@@ -44,6 +45,8 @@
     spinBtn.disabled = true;
     msgEl.textContent = "Spinning...";
     winBanner.classList.remove("show");
+    netLineEl.textContent = "";
+    netLineEl.classList.remove("positive", "negative");
 
     let result;
     try {

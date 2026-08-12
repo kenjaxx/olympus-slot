@@ -16,6 +16,7 @@
   const winBanner = document.getElementById("winBanner");
   const winBannerLabel = document.getElementById("winBannerLabel");
   const winBannerAmount = document.getElementById("winBannerAmount");
+  const netLineEl = document.getElementById("netLine");
 
   let cells = [];
   let cellSymbols = [];
@@ -125,11 +126,31 @@
     });
   }
 
+  // Drops a handful of small gold coins from the top of the reels for a
+  // couple hundred ms — the "signature" flourish for a real win.
+  function spawnCoinShower(count) {
+    const wrapWidth = reelsWrapEl.clientWidth;
+    for (let i = 0; i < count; i++) {
+      const coin = document.createElement("div");
+      coin.className = "coin-particle";
+      coin.style.left = Math.random() * (wrapWidth - 14) + "px";
+      const duration = 900 + Math.random() * 500;
+      const delay = Math.random() * 300;
+      coin.style.animationDuration = duration + "ms";
+      coin.style.animationDelay = delay + "ms";
+      reelsWrapEl.appendChild(coin);
+      setTimeout(() => coin.remove(), duration + delay + 50);
+    }
+  }
+
+  // `amount` is what's shown in the banner — pass the NET gain (win - bet),
+  // not the raw payout, so the banner only celebrates when it should.
   function showWinBanner(amount, isBig) {
-    winBannerAmount.textContent = amount.toLocaleString();
+    winBannerAmount.textContent = "+" + amount.toLocaleString();
     winBannerLabel.textContent = isBig ? "BIG WIN" : "WIN";
     winBanner.classList.toggle("big", isBig);
     winBanner.classList.add("show");
+    spawnCoinShower(isBig ? 26 : 12);
 
     if (isBig) {
       reelsWrapEl.classList.remove("shake");
@@ -218,11 +239,26 @@
           fsBadge.style.display = "none";
         }
 
-        if (result.win > 0) {
-          const isBig = result.win >= bet * 10;
-          showWinBanner(result.win, isBig);
+        // What actually matters to your wallet: payout minus what you bet.
+        // A payout that's smaller than the bet is still a net loss, even
+        // though `result.win > 0` — so it must NOT trigger the win banner.
+        const net = result.win - bet;
+        netLineEl.textContent =
+          net === 0 ? "Net: 0" : "Net: " + (net > 0 ? "+" : "") + net.toLocaleString();
+        netLineEl.classList.toggle("positive", net > 0);
+        netLineEl.classList.toggle("negative", net < 0);
+
+        if (net > 0) {
+          const isBig = net >= bet * 10;
+          showWinBanner(net, isBig);
           if (!result.scatterTriggered) {
-            msgEl.textContent = "Round complete: " + result.win.toLocaleString() + " won at " + result.multiplier + "x";
+            msgEl.textContent = "Round complete: " + result.win.toLocaleString() + " won at " + result.multiplier + "x (net +" + net.toLocaleString() + ")";
+          }
+        } else if (result.win > 0) {
+          // Paid something back, but less than the bet — a real loss dressed
+          // up as a partial return. No banner, no fanfare.
+          if (!result.scatterTriggered) {
+            msgEl.textContent = "Returned " + result.win.toLocaleString() + " — net " + net.toLocaleString();
           }
         } else if (!result.scatterTriggered && result.scatterCount !== 3) {
           msgEl.textContent = "No win this round";
