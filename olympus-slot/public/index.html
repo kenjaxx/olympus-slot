@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Olympus Slot (play money)</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+    <h1>Olympus Slot</h1>
+    <p class="subtitle">Play-money demo — no real currency involved</p>
+
+    <div class="player-row">
+      <label for="playerName">Player</label>
+      <input id="playerName" value="guest" />
+      <button id="loadPlayer">Load</button>
+    </div>
+
+    <div class="card">
+      <div class="stats-row">
+        <div>
+          <p class="label">Balance</p>
+          <p class="value" id="balance">1,000</p>
+        </div>
+        <div>
+          <p class="label">Multiplier</p>
+          <p class="value accent" id="mult">1x</p>
+        </div>
+        <div>
+          <p class="label">Last win</p>
+          <p class="value success" id="lastwin">0</p>
+        </div>
+      </div>
+
+      <div id="freespinsbadge" class="badge">Free spins: <span id="fscount">0</span> left</div>
+
+      <div id="reels" class="reels"></div>
+
+      <p id="msg" class="msg">Land 4+ temples to trigger free spins</p>
+
+      <div class="bet-row">
+        <label>Bet</label>
+        <input type="range" min="10" max="100" step="10" value="20" id="bet" />
+        <span id="betout">20</span>
+      </div>
+
+      <button id="spinbtn" class="spin-btn">Spin</button>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
