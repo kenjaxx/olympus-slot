@@ -1,0 +1,94 @@
+/* Near-miss tease (3 scatters landed) */
+.pcard-scatter.tease {
+  animation: teasePulse 0.35s ease-in-out infinite alternate;
+}
+@keyframes teasePulse {
+  from { box-shadow: 0 0 0 1px #ffd16655; }
+  to   { box-shadow: 0 0 14px 3px #ffd166cc, 0 0 0 2px #ffd166; }
+}
+
+/* Full scatter trigger (4+ scatters) */
+.pcard-scatter.ignite {
+  animation: ignitePulse 0.4s ease-in-out infinite alternate;
+}
+@keyframes ignitePulse {
+  from { box-shadow: 0 0 10px 2px #ffd166aa; transform: scale(1); }
+  to   { box-shadow: 0 0 26px 8px #ffd166ee, 0 0 0 2px #ffffff; transform: scale(1.08); }
+}
+
+/* Flashed on cells during a tumble hit */
+.cell.hit {
+  background: #3a2a63;
+  box-shadow: 0 0 0 2px #ffd166 inset, 0 0 14px 2px rgba(255, 209, 102, 0.55);
+  transform: scale(1.06);
+}
+
+/* Screen shake for big wins / scatter trigger */
+.reels-wrap.shake {
+  animation: shake 0.35s ease-in-out;
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+
+/* Full white flash for the scatter trigger moment */
+.scatter-flash {
+  position: absolute;
+  inset: 0;
+  background: white;
+  opacity: 0;
+  pointer-events: none;
+  border-radius: 8px;
+}
+.scatter-flash.flash {
+  animation: scatterFlashAnim 0.5s ease-out;
+}
+@keyframes scatterFlashAnim {
+  0%   { opacity: 0; }
+  15%  { opacity: 0.85; }
+  100% { opacity: 0; }
+}
+
+/* Win banner overlay */
+.win-banner {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: rgba(15, 10, 30, 0.72);
+  border-radius: 8px;
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.85);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.win-banner.show {
+  opacity: 1;
+  transform: scale(1);
+}
+.win-banner.big #winBannerLabel {
+  color: #ff9f6b;
+  animation: pulseBig 0.6s ease-in-out infinite alternate;
+}
+#winBannerLabel {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #ffd166;
+}
+#winBannerAmount {
+  font-size: 28px;
+  font-weight: 700;
+  color: white;
+}
+@keyframes pulseBig {
+  from { transform: scale(1); }
+  to { transform: scale(1.12); }
+}

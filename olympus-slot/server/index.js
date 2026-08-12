@@ -13,6 +13,11 @@ const players = {
   // "dad": { balance: 1000, freeSpins: 0 },
 };
 
+// The client now has a free-form bet slider/input, so the server enforces
+// the sane range instead of trusting whatever number arrives.
+const MIN_BET = 10;
+const MAX_BET = 2000;
+
 function getPlayer(name) {
   if (!players[name]) {
     players[name] = { balance: 1000, freeSpins: 0 };
@@ -29,24 +34,26 @@ app.get("/api/state/:player", (req, res) => {
 
 app.post("/api/spin", (req, res) => {
   const { player, bet } = req.body;
-  if (!player || !bet || bet <= 0) {
-    return res.status(400).json({ error: "player and a positive bet are required" });
+  const numericBet = Math.round(Number(bet));
+
+  if (!player || !Number.isFinite(numericBet) || numericBet < MIN_BET || numericBet > MAX_BET) {
+    return res.status(400).json({ error: `player and a bet between ${MIN_BET} and ${MAX_BET} are required` });
   }
 
   const p = getPlayer(player);
   const usingFreeSpin = p.freeSpins > 0;
 
-  if (!usingFreeSpin && p.balance < bet) {
+  if (!usingFreeSpin && p.balance < numericBet) {
     return res.status(400).json({ error: "insufficient balance" });
   }
 
   if (usingFreeSpin) {
     p.freeSpins -= 1;
   } else {
-    p.balance -= bet;
+    p.balance -= numericBet;
   }
 
-  const result = game.resolveSpin(bet);
+  const result = game.resolveSpin(numericBet);
 
   if (result.freeSpinsAwarded) {
     p.freeSpins += result.freeSpinsAwarded;

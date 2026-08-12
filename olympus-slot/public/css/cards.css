@@ -1,0 +1,114 @@
+.reels-wrap {
+  position: relative;
+  margin-bottom: 1rem;
+}
+
+.reels {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  background: #150e26;
+  border-radius: 8px;
+  padding: 10px;
+  height: 240px;
+}
+
+.cell {
+  position: relative;
+  border-radius: 6px;
+  height: 54px;
+  overflow: hidden;
+  transition: box-shadow 0.2s, transform 0.2s, background 0.2s;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: #f4f1ea;
+}
+
+/* ---- Standard playing-card face ---- */
+.pcard {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pcard-rank {
+  position: absolute;
+  font-family: Georgia, "Times New Roman", serif;
+  font-weight: 700;
+  font-size: 13px;
+  line-height: 1;
+  color: inherit;
+}
+.pcard-rank-tl { top: 4px; left: 5px; }
+.pcard-rank-br { bottom: 4px; right: 5px; transform: rotate(180deg); }
+
+.pcard-suit-tl {
+  position: absolute;
+  top: 16px;
+  left: 4px;
+}
+.pcard-suit-br {
+  position: absolute;
+  bottom: 16px;
+  right: 4px;
+  transform: rotate(180deg);
+}
+.pcard-suit-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pcard-spade,
+.pcard-club {
+  color: #232323;
+}
+.pcard-heart,
+.pcard-diamond {
+  color: #c0392b;
+}
+
+/* ---- Scatter (coin) card ---- */
+.pcard-scatter {
+  flex-direction: column;
+  gap: 2px;
+  background: linear-gradient(160deg, #2a1440, #3a1f5c);
+}
+.coin {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #ffe9b0, #ffd166 60%, #c9971f 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 0 2px #ffd16655;
+}
+.coin-dollar {
+  font-family: Georgia, serif;
+  font-weight: 700;
+  font-size: 14px;
+  color: #7a5300;
+}
+.scatter-label {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: #ffd166;
+}
+
+/* ---- Wild multiplier-orb card ---- */
+.pcard-wild {
+  flex-direction: column;
+  gap: 1px;
+  background: linear-gradient(160deg, #241a3d, #3a2a63);
+  border: 1px solid #ffd166aa;
+}
+.wild-label {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: #ffd166;
+}

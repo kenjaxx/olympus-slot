@@ -4,7 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Olympus Slot (play money)</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/cards.css" />
+  <link rel="stylesheet" href="css/fx.css" />
 </head>
 <body>
   <div class="app">
@@ -16,6 +18,13 @@
       <input id="playerName" value="guest" />
       <button id="loadPlayer">Load</button>
       <button id="muteBtn" title="Toggle sound">🔊</button>
+    </div>
+
+    <div class="settings-row">
+      <label for="voiceSelect">Announcer voice</label>
+      <select id="voiceSelect">
+        <option value="">Auto (pleasant + excited)</option>
+      </select>
     </div>
 
     <div class="card">
@@ -35,6 +44,7 @@
       </div>
 
       <div id="freespinsbadge" class="badge">Free spins: <span id="fscount">0</span> left</div>
+      <div id="autospinbadge" class="badge autospin-badge">Auto spin: <span id="autospinsleft">0</span> left</div>
 
       <div class="reels-wrap">
         <div id="reels" class="reels"></div>
@@ -45,18 +55,39 @@
         </div>
       </div>
 
-      <p id="msg" class="msg">Land 4+ temples to trigger free spins</p>
+      <p id="msg" class="msg">Land 4+ scatters to trigger free spins</p>
 
       <div class="bet-row">
         <label>Bet</label>
-        <input type="range" min="10" max="100" step="10" value="20" id="bet" />
-        <span id="betout">20</span>
+        <input type="range" min="10" max="500" step="10" value="20" id="bet" />
+        <input type="number" min="10" max="2000" step="10" value="20" id="betNumber" />
+      </div>
+      <div class="bet-quick-row">
+        <button class="quickbtn" id="betHalf">½</button>
+        <button class="quickbtn" id="betDouble">2×</button>
+        <button class="quickbtn" id="betMax">Max</button>
       </div>
 
       <button id="spinbtn" class="spin-btn">Spin</button>
+
+      <div class="autospin-row">
+        <label for="autospinCount">Auto spin</label>
+        <select id="autospinCount">
+          <option value="10">10</option>
+          <option value="25">25</option>
+          <option value="50">50</option>
+          <option value="100">100</option>
+        </select>
+        <button id="autospinBtn" class="autospin-btn">Start</button>
+      </div>
     </div>
   </div>
 
-  <script src="app.js"></script>
+  <script src="js/cardArt.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/reels.js"></script>
+  <script src="js/betControls.js"></script>
+  <script src="js/autospin.js"></script>
+  <script src="js/main.js"></script>
 </body>
 </html>
