@@ -2,6 +2,13 @@
 // Web Audio tones (no audio files needed) + a speech-synthesis announcer.
 // AudioContext is created lazily on first spin (browser autoplay rules
 // require a user gesture first).
+//
+// Speech is queued rather than interrupted: calling speak() while a line is
+// already playing used to call speechSynthesis.cancel(), which chopped off
+// whatever was currently being said (e.g. "6x" got killed mid-word the
+// instant "Big win!" fired right after it). Now the currently-playing line
+// always finishes; only the next *pending* line gets replaced, so during a
+// fast autospin session the queue never backs up into a long ramble either.
 
 (function () {
   let audioCtx = null;
@@ -9,9 +16,9 @@
   let chosenVoice = null;
   let userPickedVoice = false;
 
-  // Heuristic shortlist of voice names that tend to sound warm/upbeat
-  // across common browsers/OSes. Falls back to any English voice, and the
-  // person can always override via the voice dropdown in the header.
+  let speaking = false;
+  let pendingText = null;
+
   const PREFERRED_VOICE_HINTS = [
     "Google US English",
     "Samantha",
@@ -94,17 +101,41 @@
     window.speechSynthesis.onvoiceschanged = refreshVoices;
   }
 
+  function speakNow(text) {
+    const utter = new SpeechSynthesisUtterance(text);
+    if (chosenVoice) utter.voice = chosenVoice;
+    // Slower than the very first version — 1.15 read as rushed/clipped on
+    // lines like "Big win!". 0.92 stays upbeat but is actually intelligible.
+    utter.rate = 0.92;
+    utter.pitch = 1.15;
+    utter.volume = 0.9;
+
+    speaking = true;
+    const advance = () => {
+      speaking = false;
+      if (pendingText) {
+        const next = pendingText;
+        pendingText = null;
+        speakNow(next);
+      }
+    };
+    utter.onend = advance;
+    utter.onerror = advance;
+
+    window.speechSynthesis.speak(utter);
+  }
+
+  // Queues a line to be spoken. If something is already playing, this line
+  // just becomes "next up" (replacing any previous pending line) — it never
+  // interrupts what's currently being said.
   function speak(text) {
     if (muted) return;
     if (!("speechSynthesis" in window)) return;
-    window.speechSynthesis.cancel(); // avoid overlapping queued lines
-    const utter = new SpeechSynthesisUtterance(text);
-    if (chosenVoice) utter.voice = chosenVoice;
-    // Slightly faster + higher pitch reads as upbeat/excited rather than flat.
-    utter.rate = 1.15;
-    utter.pitch = 1.2;
-    utter.volume = 0.9;
-    window.speechSynthesis.speak(utter);
+    if (speaking) {
+      pendingText = text;
+      return;
+    }
+    speakNow(text);
   }
 
   function playReelStopTick(index) {
@@ -150,9 +181,48 @@
     setTimeout(() => speak("Big win!"), 250);
   }
 
+  function playPopBurst(count) {
+    if (muted) return;
+    const n = Math.min(6, count);
+    for (let i = 0; i < n; i++) {
+      playTone({
+        freq: 700 + Math.random() * 500,
+        duration: 0.06,
+        type: "square",
+        volume: 0.08,
+        delay: i * 0.02,
+      });
+    }
+  }
+
+  function playSuspenseBuildup(duration) {
+    if (muted) return;
+    const steps = Math.max(3, Math.floor(duration / 90));
+    for (let s = 0; s < steps; s++) {
+      const t = s / steps;
+      playTone({
+        freq: 130 + t * 300,
+        duration: 0.08,
+        type: "triangle",
+        volume: 0.05 + t * 0.09,
+        delay: (s * duration) / 1000 / steps,
+      });
+    }
+  }
+
+  function playFreeSpinTotalFanfare() {
+    const notes = [392, 523, 659, 784, 988, 1175];
+    notes.forEach((f, i) => playTone({ freq: f, duration: 0.35, type: "sawtooth", volume: 0.13, delay: i * 0.15 }));
+    setTimeout(() => speak("Total win!"), notes.length * 150 + 350);
+  }
+
   function setMuted(value) {
     muted = value;
-    if (muted && "speechSynthesis" in window) window.speechSynthesis.cancel();
+    if (muted && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+      speaking = false;
+      pendingText = null;
+    }
   }
 
   function isMuted() {
@@ -168,6 +238,9 @@
     playScatterTrigger,
     playWinChime,
     playBigWinFanfare,
+    playPopBurst,
+    playSuspenseBuildup,
+    playFreeSpinTotalFanfare,
     setMuted,
     isMuted,
   };

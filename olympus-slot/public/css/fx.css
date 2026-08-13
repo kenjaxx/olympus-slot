@@ -49,8 +49,10 @@
   100% { transform: translate(var(--dx), var(--dy)) scale(0.25); opacity: 0; }
 }
 
-/* Reel viewport gets a quick bright flash the instant it lands */
-.reels-wrap .landed {
+/* Reel viewport gets a quick bright flash the instant it lands
+   (also reused directly by turbo's instant reveal) */
+.reels-wrap .landed,
+.reels.landed {
   animation: reelLandFlash 0.22s ease-out;
 }
 @keyframes reelLandFlash {
@@ -198,3 +200,121 @@
   8%   { opacity: 1; }
   100% { transform: translateY(260px) rotate(420deg); opacity: 0; }
 }
+
+/* ---- Cascade: tile burst + drop-in refill ---- */
+.cell.pop {
+  animation: tilePop 0.26s ease-in forwards;
+  z-index: 2;
+}
+@keyframes tilePop {
+  0%   { transform: scale(1) rotate(0deg); opacity: 1; }
+  55%  { transform: scale(1.18) rotate(-4deg); opacity: 1; }
+  100% { transform: scale(0.1) rotate(18deg); opacity: 0; }
+}
+
+.cell.drop-in {
+  animation: tileDropIn 0.38s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes tileDropIn {
+  0%   { transform: translateY(-46px) scale(0.55); opacity: 0; }
+  60%  { transform: translateY(6px) scale(1.06); opacity: 1; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+/* ---- Pre-win suspense beat ---- */
+.reels-wrap.suspense .reels {
+  animation: suspensePulse 0.5s ease-in-out infinite alternate;
+  filter: brightness(0.5) saturate(1.35);
+}
+@keyframes suspensePulse {
+  from { transform: scale(1); }
+  to   { transform: scale(1.02); }
+}
+.reels-wrap.suspense::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 10px;
+  background: radial-gradient(ellipse at center, transparent 35%, rgba(0,0,0,0.65) 100%);
+  pointer-events: none;
+  z-index: 3;
+  animation: suspenseVignette 0.5s ease-in-out infinite alternate;
+}
+@keyframes suspenseVignette {
+  from { opacity: 0.7; }
+  to   { opacity: 1; }
+}
+
+/* ---- Free-spins bonus-round total-win screen ---- */
+.fs-total-overlay {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(ellipse at center, rgba(42,31,77,0.95), rgba(6,4,14,0.97));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s ease;
+  z-index: 50;
+  padding: 1rem;
+}
+.fs-total-overlay.show { opacity: 1; pointer-events: auto; }
+
+.fs-total-card {
+  text-align: center;
+  padding: 2rem 2.5rem;
+  border: 1px solid var(--gold-deep);
+  border-radius: 18px;
+  background: linear-gradient(180deg, var(--panel-2), var(--panel));
+  box-shadow: 0 0 60px rgba(212,175,55,0.35);
+  animation: fsCardPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  max-width: 100%;
+}
+@keyframes fsCardPop {
+  from { transform: scale(0.7); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+
+.fs-total-label {
+  font-family: var(--font-display);
+  font-size: 18px;
+  letter-spacing: 2px;
+  color: var(--gold-bright);
+  text-transform: uppercase;
+  margin: 0 0 10px;
+}
+.fs-total-amount {
+  font-family: var(--font-mono);
+  font-size: 44px;
+  font-weight: 700;
+  color: var(--parchment);
+  margin: 0 0 20px;
+  animation: fsAmountGlow 1s ease-in-out infinite alternate;
+}
+@keyframes fsAmountGlow {
+  from { text-shadow: 0 0 10px rgba(212,175,55,0.4); }
+  to   { text-shadow: 0 0 26px rgba(212,175,55,0.9); }
+}
+.fs-total-btn {
+  padding: 10px 26px;
+  min-height: 40px;
+  border-radius: 10px;
+  border: 1px solid var(--gold-deep);
+  background: linear-gradient(180deg, var(--gold-bright), var(--gold) 55%, var(--gold-deep));
+  color: #3a2a0a;
+  font-weight: 700;
+  font-family: var(--font-display);
+  letter-spacing: 1px;
+  cursor: pointer;
+}
+
+/* ---- Turbo: shortens the cascade/hit/suspense animations above whenever
+   the reels-wrap carries `.turbo` (toggled by turbo.js). This keeps the
+   JS-side wait() timings and the actual CSS animation lengths in sync, so
+   turbo doesn't just cut animations off mid-way — they genuinely play
+   faster. ---- */
+.reels-wrap.turbo .cell.pop { animation-duration: 0.09s; }
+.reels-wrap.turbo .cell.drop-in { animation-duration: 0.13s; }
+.reels-wrap.turbo .cell.hit { animation-duration: 0.14s; }
+.reels-wrap.turbo.suspense .reels { animation-duration: 0.15s; }

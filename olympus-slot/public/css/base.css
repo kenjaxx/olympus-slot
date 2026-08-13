@@ -25,20 +25,46 @@
   --font-display: "Cinzel", Georgia, serif;
   --font-body: "Inter", system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  /* iOS safe-area insets, default to 0 on devices without notches */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-* { box-sizing: border-box; }
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+/* html also gets the background so iOS/Android overscroll bounce never
+   reveals flat black behind the page. */
+html {
+  background: var(--ink);
+  height: 100%;
+}
 
 body {
   font-family: var(--font-body);
   color: var(--text);
   margin: 0;
-  padding: 2.5rem 1rem;
+  padding: calc(2.5rem + var(--safe-top)) 1rem calc(2.5rem + var(--safe-bottom));
   min-height: 100vh;
+  /* ---- Layered background: soft color blooms + a scattered starfield ----
+     Replaces the old flat --ink fill, which read as plain black,
+     especially on mobile where the side-column decoration is hidden. */
   background:
     radial-gradient(ellipse 700px 400px at 50% -10%, #2a1f4d 0%, transparent 60%),
     radial-gradient(ellipse 600px 500px at 100% 100%, #201640 0%, transparent 55%),
+    radial-gradient(ellipse 500px 400px at 0% 30%, #241a42 0%, transparent 55%),
+    radial-gradient(1.6px 1.6px at 12% 18%, rgba(255,255,255,0.55), transparent),
+    radial-gradient(1.4px 1.4px at 78% 12%, rgba(255,255,255,0.4), transparent),
+    radial-gradient(1.8px 1.8px at 32% 42%, rgba(255,255,255,0.35), transparent),
+    radial-gradient(1.2px 1.2px at 88% 34%, rgba(255,255,255,0.3), transparent),
+    radial-gradient(1.6px 1.6px at 60% 8%, rgba(255,255,255,0.4), transparent),
+    radial-gradient(1.4px 1.4px at 8% 62%, rgba(255,255,255,0.3), transparent),
+    radial-gradient(1.8px 1.8px at 92% 68%, rgba(255,255,255,0.35), transparent),
+    radial-gradient(1.2px 1.2px at 45% 80%, rgba(212,175,55,0.4), transparent),
+    radial-gradient(1.6px 1.6px at 70% 90%, rgba(255,255,255,0.3), transparent),
+    radial-gradient(1.2px 1.2px at 20% 95%, rgba(212,175,55,0.3), transparent),
     var(--ink);
+  background-repeat: no-repeat;
 }
 
 .app { max-width: 460px; margin: 0 auto; }
@@ -93,11 +119,24 @@ h1 {
   box-shadow: 0 0 6px 1px rgba(212, 175, 55, 0.6);
 }
 
-/* ---- Player / settings rows ---- */
-.player-row { display: flex; gap: 8px; margin-bottom: 0.75rem; align-items: center; }
-.player-row label { font-size: 12px; color: var(--text-dim); }
+/* ---- Player / settings rows ----
+   flex-wrap lets these gracefully drop to a second line on narrow phones
+   instead of squeezing 4-5 controls into one row and clipping/overflowing. */
+.player-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 0.75rem;
+  align-items: center;
+}
+.player-row label {
+  font-size: 12px;
+  color: var(--text-dim);
+  flex: 0 0 auto;
+}
 .player-row input {
-  flex: 1;
+  flex: 1 1 120px;
+  min-width: 90px;
   padding: 8px 10px;
   border-radius: 8px;
   border: 1px solid var(--panel-line);
@@ -107,6 +146,7 @@ h1 {
 }
 .player-row button {
   padding: 8px 14px;
+  min-height: 38px;
   border-radius: 8px;
   border: 1px solid var(--panel-line);
   background: var(--panel-2);
@@ -115,9 +155,10 @@ h1 {
   font-family: var(--font-body);
   font-weight: 600;
   transition: border-color 0.15s, background 0.15s;
+  flex: 0 0 auto;
 }
 .player-row button:hover { border-color: var(--gold-deep); background: #2e2152; }
-#muteBtn { flex: 0 0 auto; padding: 8px 12px; font-size: 15px; }
+#muteBtn { padding: 8px 12px; font-size: 15px; }
 
 .settings-row {
   display: flex;
@@ -147,7 +188,7 @@ h1 {
   box-shadow: 0 20px 50px -20px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.04);
 }
 
-.stats-row { display: flex; justify-content: space-between; margin-bottom: 0.5rem; }
+.stats-row { display: flex; justify-content: space-between; margin-bottom: 0.5rem; gap: 6px; }
 .label {
   font-size: 11px;
   letter-spacing: 0.6px;
@@ -202,9 +243,11 @@ h1 {
 .bet-row input[type="range"] {
   flex: 1;
   accent-color: var(--gold);
+  min-width: 0;
 }
 .bet-row input[type="number"] {
   width: 76px;
+  flex: 0 0 auto;
   padding: 6px 8px;
   border-radius: 8px;
   border: 1px solid var(--panel-line);
@@ -218,7 +261,8 @@ h1 {
 .bet-quick-row { display: flex; gap: 8px; margin-bottom: 1rem; }
 .quickbtn {
   flex: 1;
-  padding: 6px 0;
+  padding: 8px 0;
+  min-height: 38px;
   border-radius: 8px;
   border: 1px solid var(--panel-line);
   background: var(--panel-2);
@@ -229,6 +273,40 @@ h1 {
   transition: border-color 0.15s, color 0.15s;
 }
 .quickbtn:hover { border-color: var(--gold-deep); color: var(--gold-bright); }
+
+/* ---- Turbo toggle ---- */
+.turbo-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.turbo-hint {
+  font-size: 11px;
+  color: var(--text-faint);
+}
+.turbo-toggle {
+  flex: 0 0 auto;
+  padding: 7px 14px;
+  min-height: 36px;
+  border-radius: 999px;
+  border: 1px solid var(--panel-line);
+  background: var(--panel-2);
+  color: var(--text-dim);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+.turbo-toggle.on {
+  background: linear-gradient(180deg, var(--gold-bright), var(--gold) 60%, var(--gold-deep));
+  color: #3a2a0a;
+  border-color: var(--gold-deep);
+  box-shadow: 0 0 12px rgba(212,175,55,0.45);
+}
 
 /* ---- Spin button: gilded coin bevel ---- */
 .spin-btn {
@@ -251,10 +329,11 @@ h1 {
 .spin-btn:disabled { opacity: 0.55; cursor: default; filter: grayscale(0.3); }
 
 /* ---- Auto spin controls ---- */
-.autospin-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+.autospin-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
 .autospin-row label { font-size: 12px; color: var(--text-dim); }
 .autospin-row select {
   padding: 6px 8px;
+  min-height: 36px;
   border-radius: 8px;
   border: 1px solid var(--panel-line);
   background: var(--ink);
@@ -264,7 +343,9 @@ h1 {
 }
 .autospin-btn {
   flex: 1;
+  min-width: 100px;
   padding: 8px 0;
+  min-height: 38px;
   border-radius: 8px;
   border: 1px solid var(--panel-line);
   background: var(--panel-2);
@@ -286,7 +367,6 @@ h1 {
 --------------------------------------------------------------------- */
 
 #paytableBtn {
-  flex: 0 0 auto;
   padding: 8px 13px;
   font-family: var(--font-display);
   font-style: italic;
@@ -294,7 +374,8 @@ h1 {
 }
 
 /* Faint fluted columns pinned to the outer edges of the viewport — pure
-   background texture, hidden on narrow screens so it never crowds the app. */
+   background texture, hidden on narrow screens so it never crowds the app
+   (mobile relies on the starfield/blooms in body's background instead). */
 .temple-columns {
   position: fixed;
   top: 0;
@@ -434,3 +515,37 @@ h1 {
 }
 
 .app { position: relative; z-index: 1; }
+
+/* ---------------------------------------------------------------------
+   Mobile-friendly adjustments
+   Everything above already flexes/scales down to the .app max-width, but
+   on real small phones (320–400px wide) padding and control sizing needed
+   tightening so nothing clips or forces horizontal scroll.
+--------------------------------------------------------------------- */
+@media (max-width: 480px) {
+  body { padding: calc(1.25rem + var(--safe-top)) 0.6rem calc(1.5rem + var(--safe-bottom)); }
+  h1 { font-size: 24px; letter-spacing: 1px; }
+  .subtitle { font-size: 11px; }
+  .card { padding: 1rem 0.85rem; border-radius: 14px; }
+
+  .player-row input,
+  .player-row button { font-size: 13px; }
+  .player-row button { padding: 8px 10px; }
+
+  .value { font-size: 16px; }
+  .label { font-size: 10px; }
+
+  .bet-row input[type="number"] { width: 64px; font-size: 12px; }
+  .bet-row label { font-size: 12px; }
+
+  .turbo-hint { display: none; } /* the toggle label alone is enough on tiny screens */
+  .turbo-toggle { flex: 1 1 100%; text-align: center; }
+
+  .fs-total-card { padding: 1.5rem 1.25rem; }
+  .fs-total-amount { font-size: 32px; }
+}
+
+@media (max-width: 340px) {
+  .stats-row { flex-wrap: wrap; row-gap: 6px; }
+  .stats-row > div { flex: 1 1 30%; }
+}

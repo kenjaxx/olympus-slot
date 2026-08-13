@@ -95,3 +95,14 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Olympus slot running at http://localhost:${PORT}`);
 });
+
+// Adds a player-chosen amount to a player's balance (the "Add funds" UI control).
+app.post("/api/topup/:player", (req, res) => {
+  const p = getPlayer(req.params.player);
+  const amount = Math.round(Number(req.body.amount));
+  if (!Number.isFinite(amount) || amount <= 0) {
+    return res.status(400).json({ error: "amount must be a positive number" });
+  }
+  p.balance += amount;
+  res.json(p);
+});

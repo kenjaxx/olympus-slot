@@ -1,6 +1,8 @@
 // autospin.js
 // Repeatedly triggers a spin function until the count runs out, the player
 // hits Stop, or a spin comes back unable to proceed (e.g. low balance).
+// The loop itself is defensive: if spinOnceFn ever throws or rejects
+// unexpectedly, autospin stops cleanly instead of freezing the UI forever.
 
 (function () {
   const countSel = document.getElementById("autospinCount");
@@ -35,7 +37,14 @@
       remaining--;
       updateBadge();
 
-      const outcome = spinOnceFn ? await spinOnceFn() : null;
+      let outcome = null;
+      try {
+        outcome = spinOnceFn ? await spinOnceFn() : null;
+      } catch (err) {
+        console.error("autospin: spin threw, stopping", err);
+        outcome = null;
+      }
+
       if (!outcome || !outcome.ok) {
         stop();
         return;

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
   <title>Olympus Slot (play money)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="css/fx.css" />
 </head>
 <body>
-  <!-- Faint fluted-column ornamentation pinned to the viewport edges -->
+  <!-- Faint fluted-column ornamentation pinned to the viewport edges (desktop only — see base.css) -->
   <div class="temple-columns temple-columns-left" aria-hidden="true"></div>
   <div class="temple-columns temple-columns-right" aria-hidden="true"></div>
 
@@ -48,11 +48,20 @@
       <label for="playerName">Player</label>
       <input id="playerName" value="guest" />
       <button id="loadPlayer">Load</button>
+      <button id="resetBtn" title="Reset balance to 1,000">↺</button>
       <button id="paytableBtn" title="Paytable">𝒊</button>
       <button id="muteBtn" title="Toggle sound">🔊</button>
     </div>
 
-    <div class="settings-row">
+    <div class="player-row">
+      <label for="loadAmount">Add funds</label>
+      <input type="number" id="loadAmount" min="100" step="100" value="1000" />
+      <button id="topupBtn">Add</button>
+    </div>
+
+    <!-- Voice is auto-picked for the best available announcer; left in the
+         DOM (audio.js reads it) but hidden since there's nothing to tune. -->
+    <div class="settings-row" style="display:none">
       <label for="voiceSelect">Announcer voice</label>
       <select id="voiceSelect">
         <option value="">Auto (pleasant + excited)</option>
@@ -106,6 +115,11 @@
         <button class="quickbtn" id="betMax">Max</button>
       </div>
 
+      <div class="turbo-row">
+        <span class="turbo-hint">Skip animations for faster spins</span>
+        <button id="turboBtn" class="turbo-toggle" aria-pressed="false">⚡ Turbo: OFF</button>
+      </div>
+
       <button id="spinbtn" class="spin-btn">Spin</button>
 
       <div class="autospin-row">
@@ -137,7 +151,17 @@
     </div>
   </div>
 
+  <!-- Free-spins total-win summary, shown once the bonus round ends -->
+  <div id="freeSpinTotalOverlay" class="fs-total-overlay">
+    <div class="fs-total-card">
+      <p class="fs-total-label">Free Spins Complete</p>
+      <p class="fs-total-amount" id="fsTotalAmount">0</p>
+      <button id="fsTotalContinue" class="fs-total-btn">Continue</button>
+    </div>
+  </div>
+
   <script src="js/cardArt.js"></script>
+  <script src="js/turbo.js"></script>
   <script src="js/audio.js"></script>
   <script src="js/reels.js"></script>
   <script src="js/betControls.js"></script>
