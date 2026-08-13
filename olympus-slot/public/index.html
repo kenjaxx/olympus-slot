@@ -44,13 +44,9 @@
       </symbol>
     </svg>
 
-    <div class="player-row">
-      <label for="playerName">Player</label>
-      <input id="playerName" value="guest" />
-      <button id="loadPlayer">Load</button>
-      <button id="resetBtn" title="Reset balance to 1,000">↺</button>
-      <button id="paytableBtn" title="Paytable">𝒊</button>
-      <button id="muteBtn" title="Toggle sound">🔊</button>
+    <!-- Only the paytable button remains here — player name / load / reset / mute removed -->
+    <div class="player-row player-row-single">
+      <button id="paytableBtn" title="Paytable">𝒊 Paytable</button>
     </div>
 
     <div class="player-row">
@@ -115,11 +111,6 @@
         <button class="quickbtn" id="betMax">Max</button>
       </div>
 
-      <div class="turbo-row">
-        <span class="turbo-hint">Skip animations for faster spins</span>
-        <button id="turboBtn" class="turbo-toggle" aria-pressed="false">⚡ Turbo: OFF</button>
-      </div>
-
       <button id="spinbtn" class="spin-btn">Spin</button>
 
       <div class="autospin-row">
@@ -151,7 +142,22 @@
     </div>
   </div>
 
-  <!-- Free-spins total-win summary, shown once the bonus round ends -->
+  <!-- Free-spins TRIGGER overlay — shown the moment a scatter trigger lands -->
+  <div id="fsTriggerOverlay" class="fs-total-overlay fs-trigger-overlay">
+    <div class="fs-total-card fs-trigger-card">
+      <div class="bell-wrap">
+        <svg class="bell-icon" viewBox="0 0 64 64" width="72" height="72" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+          <path d="M32 6c-3 0-5 2-5 5v2C19 15 14 22 14 31v10l-5 8h46l-5-8V31c0-9-5-16-13-18v-2c0-3-2-5-5-5z"/>
+          <path d="M26 49a6 6 0 0 0 12 0"/>
+        </svg>
+      </div>
+      <p class="fs-trigger-title">Free Spins!</p>
+      <p class="fs-trigger-text">You have <span id="fsAwardCount">10</span> free spins!</p>
+      <button id="fsTriggerContinue" class="fs-total-btn">Continue</button>
+    </div>
+  </div>
+
+  <!-- Free-spins bonus-round total-win summary, shown once the bonus round ends -->
   <div id="freeSpinTotalOverlay" class="fs-total-overlay">
     <div class="fs-total-card">
       <p class="fs-total-label">Free Spins Complete</p>
@@ -161,7 +167,6 @@
   </div>
 
   <script src="js/cardArt.js"></script>
-  <script src="js/turbo.js"></script>
   <script src="js/audio.js"></script>
   <script src="js/reels.js"></script>
   <script src="js/betControls.js"></script>

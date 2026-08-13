@@ -49,8 +49,7 @@
   100% { transform: translate(var(--dx), var(--dy)) scale(0.25); opacity: 0; }
 }
 
-/* Reel viewport gets a quick bright flash the instant it lands
-   (also reused directly by turbo's instant reveal) */
+/* Reel viewport gets a quick bright flash the instant it lands */
 .reels-wrap .landed,
 .reels.landed {
   animation: reelLandFlash 0.22s ease-out;
@@ -124,7 +123,6 @@
 }
 .win-banner.show { opacity: 1; transform: scale(1); }
 
-/* Rotating conic-gradient rays, only visible while the banner is shown */
 .win-banner::before {
   content: "";
   position: absolute;
@@ -182,7 +180,7 @@
   to { transform: scale(1.12); }
 }
 
-/* ---- Coin shower: spawned by reels.js on a real net win ---- */
+/* ---- Coin shower: spawned by reels.js on a real net win or free-spins trigger ---- */
 .coin-particle {
   position: absolute;
   top: -16px;
@@ -245,7 +243,33 @@
   to   { opacity: 1; }
 }
 
-/* ---- Free-spins bonus-round total-win screen ---- */
+/* ---- Multiplier hit: a "+Nx" label flies from the winning tile to the
+   multiplier stat, which then pops and glows on arrival. ---- */
+.mult-fly {
+  position: fixed;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--gold-bright);
+  text-shadow: 0 0 8px rgba(212, 175, 55, 0.85);
+  pointer-events: none;
+  z-index: 60;
+  transform: translate(0, 0) scale(1);
+  opacity: 1;
+  transition: transform 0.42s cubic-bezier(0.2, 0.8, 0.3, 1), opacity 0.42s ease-in;
+}
+
+.value.accent.mult-pop {
+  animation: multPop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes multPop {
+  0%   { transform: scale(1); text-shadow: none; }
+  40%  { transform: scale(1.55); text-shadow: 0 0 16px rgba(212, 175, 55, 0.95); }
+  100% { transform: scale(1); text-shadow: 0 0 6px rgba(212, 175, 55, 0.45); }
+}
+
+/* ---- Free-spins bonus-round total-win screen (shared base for both
+   the TOTAL overlay and the TRIGGER overlay below) ---- */
 .fs-total-overlay {
   position: fixed;
   inset: 0;
@@ -309,12 +333,56 @@
   cursor: pointer;
 }
 
-/* ---- Turbo: shortens the cascade/hit/suspense animations above whenever
-   the reels-wrap carries `.turbo` (toggled by turbo.js). This keeps the
-   JS-side wait() timings and the actual CSS animation lengths in sync, so
-   turbo doesn't just cut animations off mid-way — they genuinely play
-   faster. ---- */
-.reels-wrap.turbo .cell.pop { animation-duration: 0.09s; }
-.reels-wrap.turbo .cell.drop-in { animation-duration: 0.13s; }
-.reels-wrap.turbo .cell.hit { animation-duration: 0.14s; }
-.reels-wrap.turbo.suspense .reels { animation-duration: 0.15s; }
+/* ---- Free-spins TRIGGER overlay — bell ring + "you won free spins" ---- */
+.fs-trigger-overlay {
+  z-index: 55; /* sits above the standard fs-total overlay if both were ever queued */
+}
+
+.bell-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 12px;
+  color: var(--gold-bright);
+  filter: drop-shadow(0 0 12px rgba(212, 175, 55, 0.7));
+}
+.bell-icon {
+  transform-origin: 50% 8%;
+  animation: bellRing 0.5s ease-in-out 3;
+}
+@keyframes bellRing {
+  0%, 100% { transform: rotate(0deg); }
+  20% { transform: rotate(-20deg); }
+  40% { transform: rotate(16deg); }
+  60% { transform: rotate(-11deg); }
+  80% { transform: rotate(6deg); }
+}
+
+.fs-trigger-title {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--gold-bright);
+  margin: 0 0 8px;
+  animation: fsAmountGlow 1s ease-in-out infinite alternate;
+}
+.fs-trigger-text {
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--parchment);
+  margin: 0 0 22px;
+}
+.fs-trigger-text #fsAwardCount {
+  color: var(--gold-bright);
+  font-family: var(--font-mono);
+  font-weight: 700;
+}
+
+/* ---- Mobile: shrink the trigger card a touch ---- */
+@media (max-width: 480px) {
+  .fs-trigger-title { font-size: 22px; }
+  .fs-trigger-text { font-size: 13px; }
+  .bell-icon { width: 58px; height: 58px; }
+}

@@ -1,8 +1,7 @@
 // reels.js
 // Everything about drawing and animating the 4x5 grid, plus the win banner.
-// Respects window.Turbo (from turbo.js): when turbo is on, the reel-drop
-// cascade is skipped entirely and every tumble/suspense timing is cut down
-// to a fraction, so a spin resolves almost instantly.
+// Turbo mode has been removed — every spin always plays the full-quality
+// cascade/tumble/suspense animation at normal speed.
 
 (function () {
   const ROWS = 4, COLS = 5, CELL_H = 54;
@@ -23,15 +22,6 @@
 
   let cells = [];
   let cellSymbols = [];
-
-  function isTurbo() {
-    return !!(window.Turbo && window.Turbo.isOn());
-  }
-
-  // Returns `fast` when turbo is on, `normal` otherwise.
-  function tms(normal, fast) {
-    return isTurbo() ? fast : normal;
-  }
 
   function wait(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
@@ -79,8 +69,8 @@
     }
   }
 
-  // Full cascading reel-drop animation (normal speed).
-  function animateReelDropNormal(finalValues) {
+  // Full cascading reel-drop animation.
+  function animateReelDrop(finalValues) {
     return new Promise((resolve) => {
       reelsEl.innerHTML = "";
       const extra = 10;
@@ -134,24 +124,6 @@
     });
   }
 
-  // Turbo version: skip the cascade entirely — the grid just appears with a
-  // quick landing flash and a single tick, like a near-instant "reveal".
-  function animateReelDropTurbo(finalValues) {
-    return new Promise((resolve) => {
-      buildStaticGrid(finalValues);
-      reelsEl.classList.add("landed");
-      Sound.playReelStopTick(2);
-      setTimeout(() => {
-        reelsEl.classList.remove("landed");
-        resolve();
-      }, 90);
-    });
-  }
-
-  function animateReelDrop(finalValues) {
-    return isTurbo() ? animateReelDropTurbo(finalValues) : animateReelDropNormal(finalValues);
-  }
-
   function spawnSparks(cellEl, count) {
     const wrapRect = reelsWrapEl.getBoundingClientRect();
     const cellRect = cellEl.getBoundingClientRect();
@@ -194,6 +166,49 @@
     }
   }
 
+  // Flies a "+Nx" label from a reel cell to the multiplier stat box, then
+  // pops/glows the multiplier value on arrival. Falls back to a plain pop
+  // if there's no origin cell to fly from.
+  function animateMultiplierHit(newValue, orbCellIdx) {
+    return new Promise((resolve) => {
+      const originEl = orbCellIdx >= 0 && cells[orbCellIdx] ? cells[orbCellIdx] : null;
+
+      function pop() {
+        multEl.textContent = newValue + "x";
+        multEl.classList.remove("mult-pop");
+        void multEl.offsetWidth; // restart animation
+        multEl.classList.add("mult-pop");
+        resolve();
+      }
+
+      if (!originEl) {
+        pop();
+        return;
+      }
+
+      const orect = originEl.getBoundingClientRect();
+      const trect = multEl.getBoundingClientRect();
+      const fly = document.createElement("div");
+      fly.className = "mult-fly";
+      fly.textContent = "+" + newValue + "x";
+      fly.style.left = orect.left + orect.width / 2 + "px";
+      fly.style.top = orect.top + orect.height / 2 + "px";
+      document.body.appendChild(fly);
+
+      requestAnimationFrame(() => {
+        const dx = (trect.left + trect.width / 2) - (orect.left + orect.width / 2);
+        const dy = (trect.top + trect.height / 2) - (orect.top + orect.height / 2);
+        fly.style.transform = "translate(" + dx + "px, " + dy + "px) scale(0.4)";
+        fly.style.opacity = "0";
+      });
+
+      setTimeout(() => {
+        fly.remove();
+        pop();
+      }, 420);
+    });
+  }
+
   // ---- Cascade: pop the hit tiles, then drop fresh ones into their place ----
   // Purely visual — dramatizes the tumble round the server already computed,
   // never changes odds or adds extra wins.
@@ -203,14 +218,12 @@
   // restarting the animation (the element stays frozen at "pop"'s invisible
   // end state forever). Fixed by resetting to a plain class and forcing a
   // reflow (`void el.offsetWidth`) before adding the new animation class.
-  // The CSS itself also shortens these animations when `.turbo` is present
-  // on the reels-wrap (see fx.css), so turbo mode isn't just "cut off early".
   async function popAndRefill(idxs) {
     try {
       idxs.forEach((i) => cells[i].classList.add("pop"));
       Sound.playPopBurst(idxs.length);
 
-      await wait(tms(260, 70));
+      await wait(260);
 
       idxs.forEach((i) => {
         const newSym = CardArt.randomSymbolKey();
@@ -222,7 +235,7 @@
         el.classList.add("drop-in");
       });
 
-      await wait(tms(380, 100));
+      await wait(380);
 
       idxs.forEach((i) => cells[i] && cells[i].classList.remove("drop-in"));
     } catch (err) {
@@ -235,7 +248,12 @@
     }
   }
 
+  // Flashes a random subset of NON-scatter cells to represent a tumble hit.
+  // If this round carries a multiplier orb, one flashed cell becomes an orb
+  // card — returns that cell's index (or -1) so the caller can animate the
+  // multiplier flying from that exact tile.
   async function flashHitCells(count, comboIndex, orbMult) {
+    let orbCellIdx = -1;
     try {
       const eligible = cellSymbols
         .map((sym, i) => ({ sym, i }))
@@ -257,17 +275,19 @@
         const orbIdx = idxList[Math.floor(Math.random() * idxList.length)];
         cells[orbIdx].innerHTML = CardArt.cardFor("orb").html;
         spawnSparks(cells[orbIdx], 8);
+        orbCellIdx = orbIdx;
       }
 
       Sound.playTumbleHit(comboIndex);
 
-      await wait(tms(420, 90));
+      await wait(420);
 
       idxList.forEach((i) => cells[i].classList.remove("hit"));
       await popAndRefill(idxList);
     } catch (err) {
       console.error("flashHitCells error:", err);
     }
+    return orbCellIdx;
   }
 
   function showWinBanner(amount, isBig) {
@@ -277,7 +297,7 @@
     void winBanner.offsetWidth;
     winBanner.classList.toggle("big", isBig);
     winBanner.classList.add("show");
-    animateCount(winBannerAmount, amount, tms(isBig ? 1100 : 550, isBig ? 500 : 300), "+");
+    animateCount(winBannerAmount, amount, isBig ? 1100 : 550, "+");
     spawnCoinShower(isBig ? 34 : 12);
 
     if (isBig) {
@@ -291,23 +311,55 @@
       Sound.playWinChime();
     }
 
-    setTimeout(() => winBanner.classList.remove("show"), tms(isBig ? 1900 : 1400, isBig ? 1000 : 700));
+    setTimeout(() => winBanner.classList.remove("show"), isBig ? 1900 : 1400);
   }
 
   // Dims the reels, adds a pulsing vignette + rising drumroll — a beat of
-  // suspense right before a real win reveals itself. Much shorter in turbo.
+  // suspense right before a real win reveals itself.
   async function buildSuspense(duration) {
     try {
       reelsWrapEl.classList.add("suspense");
-      const d = tms(duration, Math.min(150, Math.round(duration / 4)));
-      Sound.playSuspenseBuildup(d);
-      await wait(d);
+      Sound.playSuspenseBuildup(duration);
+      await wait(duration);
     } finally {
       reelsWrapEl.classList.remove("suspense");
     }
   }
 
-  async function runScatterEffect(scatterCount, triggered) {
+  // Big full-screen "you won free spins!" moment: ringing bell, coin
+  // shower, and a Continue button. Auto-advances after a few seconds so
+  // autospin never gets stuck waiting on a click.
+  function showFreeSpinTriggerOverlay(freeSpinsAwarded) {
+    return new Promise((resolve) => {
+      const overlay = document.getElementById("fsTriggerOverlay");
+      const countEl = document.getElementById("fsAwardCount");
+      const continueBtn = document.getElementById("fsTriggerContinue");
+      if (!overlay || !continueBtn) {
+        resolve();
+        return;
+      }
+
+      const count = freeSpinsAwarded || 10;
+      if (countEl) countEl.textContent = count;
+
+      overlay.classList.add("show");
+      Sound.playBellRing(count);
+      spawnCoinShower(28);
+
+      let done = false;
+      function close() {
+        if (done) return;
+        done = true;
+        overlay.classList.remove("show");
+        continueBtn.removeEventListener("click", close);
+        resolve();
+      }
+      continueBtn.addEventListener("click", close);
+      setTimeout(close, 4500);
+    });
+  }
+
+  async function runScatterEffect(scatterCount, triggered, freeSpinsAwarded) {
     try {
       const scatterIdxs = cellSymbols
         .map((sym, i) => (sym === "temple" ? i : -1))
@@ -318,7 +370,7 @@
         scatterCards.forEach((el) => el && el.classList.add("tease"));
         Sound.playScatterTease();
         msgEl.textContent = "So close! 3 scatters landed";
-        await wait(tms(900, 250));
+        await wait(900);
         scatterCards.forEach((el) => el && el.classList.remove("tease"));
         return;
       }
@@ -333,8 +385,11 @@
         reelsWrapEl.classList.add("shake");
         Sound.playScatterTrigger();
         msgEl.textContent = scatterCount + " scatters landed! Free spins triggered";
-        await wait(tms(1100, 300));
+        await wait(900);
         scatterCards.forEach((el) => el && el.classList.remove("ignite"));
+
+        // The big "you won free spins" moment, with its own Continue button.
+        await showFreeSpinTriggerOverlay(freeSpinsAwarded);
         return;
       }
     } catch (err) {
@@ -344,12 +399,14 @@
 
   async function playResultSequence(result, bet) {
     try {
+      let runningMult = 1;
       for (let i = 0; i < result.rounds.length; i++) {
         const round = result.rounds[i];
-        await flashHitCells(round.clusterSize, i, round.orbMult);
+        const orbCellIdx = await flashHitCells(round.clusterSize, i, round.orbMult);
         if (round.orbMult > 0) {
-          const runningTotal = 1 + result.rounds.slice(0, i + 1).reduce((s, r) => s + r.orbMult, 0);
-          Sound.playMultiplierHit(round.orbMult, runningTotal);
+          runningMult += round.orbMult;
+          Sound.playMultiplierHit(round.orbMult, runningMult);
+          await animateMultiplierHit(runningMult, orbCellIdx);
         }
       }
     } catch (err) {
@@ -357,8 +414,8 @@
     }
 
     balanceEl.textContent = result.balance.toLocaleString();
-    animateCount(lastwinEl, result.win, tms(500, 200));
-    multEl.textContent = result.multiplier + "x";
+    animateCount(lastwinEl, result.win, 500);
+    multEl.textContent = result.multiplier + "x"; // reconcile with the server's final figure
 
     if (result.freeSpins > 0) {
       fsBadge.style.display = "block";
@@ -411,7 +468,7 @@
       overlay.classList.add("show");
       Sound.playFreeSpinTotalFanfare();
 
-      setTimeout(() => animateCount(amountEl, amount, tms(2200, 900)), tms(500, 150));
+      setTimeout(() => animateCount(amountEl, amount, 2200), 500);
 
       let done = false;
       function close() {
@@ -423,7 +480,7 @@
       }
       continueBtn.addEventListener("click", close);
       // Auto-advances so autospin never gets stuck waiting on a click.
-      setTimeout(close, tms(4200, 1800));
+      setTimeout(close, 4200);
     });
   }
 
@@ -433,7 +490,7 @@
       reelsWrapEl.classList.add("spinning");
       await animateReelDrop(result.grid);
       reelsWrapEl.classList.remove("spinning");
-      await runScatterEffect(result.scatterCount, result.scatterTriggered);
+      await runScatterEffect(result.scatterCount, result.scatterTriggered, result.freeSpinsAwarded);
       await playResultSequence(result, bet);
     } catch (err) {
       console.error("runFullSequence error:", err);

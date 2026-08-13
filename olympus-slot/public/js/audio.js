@@ -168,7 +168,19 @@
   function playScatterTrigger() {
     const notes = [523, 659, 784, 1046, 1318];
     notes.forEach((f, i) => playTone({ freq: f, duration: 0.28, type: "sine", volume: 0.16, delay: i * 0.09 }));
-    setTimeout(() => speak("Free spins!"), 200);
+  }
+
+  // Bright, ringing bell-like chord used when the free-spins TRIGGER
+  // overlay appears — distinct from playScatterTrigger's quick chime so
+  // the big "you won free spins" moment feels like its own event.
+  function playBellRing(freeSpinsAwarded) {
+    const notes = [1046.5, 1318.5, 1568, 2093];
+    notes.forEach((f, i) => {
+      playTone({ freq: f, duration: 0.9, type: "sine", volume: 0.14, delay: i * 0.1, glideTo: f * 0.985 });
+      playTone({ freq: f * 2, duration: 0.5, type: "sine", volume: 0.05, delay: i * 0.1 });
+    });
+    const count = Number.isFinite(freeSpinsAwarded) ? freeSpinsAwarded : 10;
+    setTimeout(() => speak(`Free spins! You have ${count} free spins!`), 350);
   }
 
   function playWinChime() {
@@ -236,6 +248,7 @@
     playMultiplierHit,
     playScatterTease,
     playScatterTrigger,
+    playBellRing,
     playWinChime,
     playBigWinFanfare,
     playPopBurst,

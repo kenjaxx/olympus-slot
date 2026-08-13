@@ -2,6 +2,9 @@
 // Ties the other modules together: loads player state, wires the Spin
 // button, and provides the single spinOnce() routine that both the manual
 // Spin button and AutoSpin call.
+//
+// Player switching / reset / mute UI has been removed — this always plays
+// as a single fixed "guest" session.
 
 (function () {
   const betEl = document.getElementById("bet");
@@ -10,29 +13,19 @@
   const fsCount = document.getElementById("fscount");
   const msgEl = document.getElementById("msg");
   const spinBtn = document.getElementById("spinbtn");
-  const playerNameEl = document.getElementById("playerName");
-  const loadPlayerBtn = document.getElementById("loadPlayer");
-  const resetBtn = document.getElementById("resetBtn");
   const loadAmountEl = document.getElementById("loadAmount");
   const topupBtn = document.getElementById("topupBtn");
-  const muteBtn = document.getElementById("muteBtn");
   const winBanner = document.getElementById("winBanner");
   const netLineEl = document.getElementById("netLine");
 
-  let currentPlayer = "guest";
+  const currentPlayer = "guest";
 
   // Tracks an in-progress free-spins bonus round so we can total up every
   // win across it and show one big payoff screen at the end. Null when
   // we're not currently inside a bonus round.
   let freeSpinSession = null;
 
-  muteBtn.addEventListener("click", () => {
-    Sound.setMuted(!Sound.isMuted());
-    muteBtn.textContent = Sound.isMuted() ? "🔇" : "🔊";
-  });
-
-  async function loadPlayer(name) {
-    currentPlayer = name || "guest";
+  async function loadPlayer() {
     try {
       const res = await fetch(`/api/state/${encodeURIComponent(currentPlayer)}`);
       const data = await res.json();
@@ -48,25 +41,6 @@
       msgEl.textContent = "Could not load player";
     }
   }
-
-  loadPlayerBtn.addEventListener("click", () => loadPlayer(playerNameEl.value.trim()));
-
-  resetBtn.addEventListener("click", async () => {
-    if (AutoSpin.isRunning()) return;
-    const ok = confirm(`Reset ${currentPlayer}'s balance back to 1,000?`);
-    if (!ok) return;
-    try {
-      const res = await fetch(`/api/reset/${encodeURIComponent(currentPlayer)}`, { method: "POST" });
-      const data = await res.json();
-      balanceEl.textContent = data.balance.toLocaleString();
-      fsBadge.style.display = data.freeSpins > 0 ? "block" : "none";
-      fsCount.textContent = data.freeSpins;
-      msgEl.textContent = `${currentPlayer}'s balance reset to ${data.balance.toLocaleString()}`;
-    } catch (err) {
-      console.error("reset error:", err);
-      msgEl.textContent = "Could not reset balance";
-    }
-  });
 
   // Adds a player-chosen amount to the current player's balance.
   topupBtn.addEventListener("click", async () => {
@@ -88,7 +62,7 @@
       }
       const data = await res.json();
       balanceEl.textContent = data.balance.toLocaleString();
-      msgEl.textContent = `Added ${amount.toLocaleString()} to ${currentPlayer}'s balance`;
+      msgEl.textContent = `Added ${amount.toLocaleString()} to your balance`;
     } catch (err) {
       console.error("topup error:", err);
       msgEl.textContent = "Could not reach server";
@@ -165,5 +139,5 @@
 
   // ---- Boot ----
   Reels.buildStaticGrid(Array.from({ length: 20 }, CardArt.randomSymbolKey));
-  loadPlayer(playerNameEl.value.trim());
+  loadPlayer();
 })();
