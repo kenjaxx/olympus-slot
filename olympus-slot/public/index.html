@@ -12,6 +12,10 @@
   <link rel="stylesheet" href="css/fx.css" />
 </head>
 <body>
+  <!-- Faint fluted-column ornamentation pinned to the viewport edges -->
+  <div class="temple-columns temple-columns-left" aria-hidden="true"></div>
+  <div class="temple-columns temple-columns-right" aria-hidden="true"></div>
+
   <div class="app">
 
     <header class="temple-header">
@@ -44,6 +48,7 @@
       <label for="playerName">Player</label>
       <input id="playerName" value="guest" />
       <button id="loadPlayer">Load</button>
+      <button id="paytableBtn" title="Paytable">𝒊</button>
       <button id="muteBtn" title="Toggle sound">🔊</button>
     </div>
 
@@ -116,11 +121,28 @@
     </div>
   </div>
 
+  <!-- Paytable / info modal -->
+  <div id="paytableModal" class="paytable-modal">
+    <div class="paytable-sheet">
+      <div class="paytable-head">
+        <h2>Symbol Values</h2>
+        <button id="paytableClose" class="paytable-close" aria-label="Close">✕</button>
+      </div>
+      <ul id="paytableList" class="paytable-list"></ul>
+      <div class="paytable-rules">
+        <p><strong>Scatter (coin):</strong> land 4 or more anywhere to trigger 10 free spins. 3 scatters is a near miss.</p>
+        <p><strong>Wild orb:</strong> appears on a winning hit and adds its value to the round multiplier.</p>
+      </div>
+      <p class="paytable-disclaimer">Play-money entertainment only. No real currency, purchases, or withdrawals are involved.</p>
+    </div>
+  </div>
+
   <script src="js/cardArt.js"></script>
   <script src="js/audio.js"></script>
   <script src="js/reels.js"></script>
   <script src="js/betControls.js"></script>
   <script src="js/autospin.js"></script>
+  <script src="js/paytable.js"></script>
   <script src="js/main.js"></script>
 </body>
 </html>

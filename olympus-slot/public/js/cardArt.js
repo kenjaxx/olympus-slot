@@ -1,47 +1,50 @@
 // cardArt.js
-// Renders symbols as standard playing-card faces (rank + suit), drawn as
-// small original SVG icons. This is generic public-domain-style card
-// iconography — not a reproduction of any specific commercial game's art.
+// Renders each reel symbol as an original line-art mythology icon (grape
+// cluster, kylix cup, amphora, krater, gem, laurel crown) instead of a
+// generic playing-card face. Purely cosmetic — gameplay/probabilities are
+// untouched on the server. All icons are simple geometric shapes drawn by
+// hand for this project; they don't reproduce any specific commercial
+// game's artwork.
 
 (function () {
-  const SUIT_PATH = {
-    spade: '<path d="M20 4 C10 14 4 22 4 29 a10 10 0 0 0 20 3 a10 10 0 0 0 20 -3 c0 -7 -6 -15 -16 -25 Z" transform="translate(-4 0)"/>',
-    heart: '<path d="M20 34 C4 22 4 10 13 7 C18 5 20 10 20 10 C20 10 22 5 27 7 C36 10 36 22 20 34 Z"/>',
-    diamond: '<path d="M20 2 L34 20 L20 38 L6 20 Z"/>',
-    club: '<circle cx="20" cy="12" r="8"/><circle cx="11" cy="24" r="8"/><circle cx="29" cy="24" r="8"/><rect x="17" y="22" width="6" height="13"/>',
+  // Symbol metadata, ordered low -> high value. `tier` drives the visual
+  // treatment (border color, glow) and is reused by the paytable.
+  const SYMBOL_META = {
+    grape: { tier: 1, label: "Grapes",  accent: "#8577a8" },
+    wine:  { tier: 2, label: "Kylix",   accent: "#6fa287" },
+    urn:   { tier: 3, label: "Amphora", accent: "#3d5a8a" },
+    vase:  { tier: 4, label: "Krater",  accent: "#b5502d" },
+    gem:   { tier: 5, label: "Gem",     accent: "#c23b3b" },
+    crown: { tier: 6, label: "Crown",   accent: "#d4af37" },
   };
 
-  // Which reel symbol (from server/game.js SYMS) maps to which rank/suit.
-  // Purely cosmetic — gameplay/probabilities are untouched on the server.
-  const RANK_SUIT_MAP = {
-    grape: { rank: "9", suit: "spade" },
-    wine: { rank: "10", suit: "heart" },
-    urn: { rank: "J", suit: "diamond" },
-    vase: { rank: "Q", suit: "club" },
-    gem: { rank: "K", suit: "spade" },
-    crown: { rank: "A", suit: "heart" },
+  // Highest value first — handy for the paytable, which reads top to bottom.
+  const SYMBOL_ORDER = Object.keys(SYMBOL_META).sort(
+    (a, b) => SYMBOL_META[b].tier - SYMBOL_META[a].tier
+  );
+
+  const ICONS = {
+    grape:
+      '<svg viewBox="0 0 40 40" fill="currentColor"><path d="M20 2 q5 -4 9 -1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="14" cy="13" r="5"/><circle cx="23" cy="11" r="5"/><circle cx="19" cy="20" r="5"/><circle cx="28" cy="19" r="5"/><circle cx="14" cy="24" r="5"/><circle cx="23" cy="29" r="5"/></svg>',
+    wine:
+      '<svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="20" cy="15" rx="12" ry="4.5"/><path d="M8 15 q0 9 12 9 q12 0 12 -9"/><path d="M7 15 q-5 0 -4 5"/><path d="M33 15 q5 0 4 5"/><path d="M20 24 v7"/><path d="M13 34 h14"/></svg>',
+    urn:
+      '<svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3 h8 v4 h-8 Z"/><path d="M16 7 q-9 2 -9 13 q0 13 13 13 q13 0 13 -13 q0 -11 -9 -13"/><path d="M7 15 q-4 2 -3 8"/><path d="M33 15 q4 2 3 8"/></svg>',
+    vase:
+      '<svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5 h22 l-4.5 15 q-6.5 4.5 -13 0 Z"/><path d="M18.5 20 v8 h3 v-8"/><path d="M12.5 32 h15"/><path d="M7 7 q-5 2 -2.5 9"/><path d="M33 7 q5 2 2.5 9"/></svg>',
+    gem:
+      '<svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M8 14 L20 3 L32 14 L20 37 Z"/><path d="M8 14 H32"/><path d="M14.5 14 L20 3"/><path d="M25.5 14 L20 3"/><path d="M14.5 14 L20 37"/><path d="M25.5 14 L20 37"/></svg>',
+    crown:
+      '<svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M6 30 L9.5 12 L17 20 L20 6 L23 20 L30.5 12 L34 30 Z"/><path d="M6 30 h28 v5 h-28 Z" fill="currentColor" stroke="none"/><circle cx="20" cy="6" r="2" fill="currentColor" stroke="none"/></svg>',
   };
 
-  function suitSvg(suit, size) {
+  function symbolCardHTML(symbolKey) {
+    const meta = SYMBOL_META[symbolKey];
+    if (!meta) return "";
     return (
-      '<svg viewBox="0 0 40 40" width="' + size + '" height="' + size + '" class="suit-icon">' +
-      SUIT_PATH[suit] +
-      "</svg>"
-    );
-  }
-
-  function playingCardHTML(symbolKey) {
-    const info = RANK_SUIT_MAP[symbolKey];
-    if (!info) return "";
-    const { rank, suit } = info;
-    const isRed = suit === "heart" || suit === "diamond";
-    return (
-      '<div class="pcard pcard-' + (isRed ? "heart" : "spade") + '">' +
-      '<span class="pcard-rank pcard-rank-tl">' + rank + "</span>" +
-      '<span class="pcard-suit-tl">' + suitSvg(suit, 13) + "</span>" +
-      '<span class="pcard-suit-center">' + suitSvg(suit, 32) + "</span>" +
-      '<span class="pcard-suit-br">' + suitSvg(suit, 13) + "</span>" +
-      '<span class="pcard-rank pcard-rank-br">' + rank + "</span>" +
+      '<div class="pcard pcard-symbol pcard-tier' + meta.tier + '" style="--tier-accent:' + meta.accent + '">' +
+      '<span class="pcard-icon">' + ICONS[symbolKey] + "</span>" +
+      '<span class="pcard-name">' + meta.label + "</span>" +
       "</div>"
     );
   }
@@ -71,13 +74,13 @@
   function cardFor(symbolKey) {
     if (symbolKey === "temple") return { html: scatterCardHTML(), className: "card-scatter-wrap" };
     if (symbolKey === "orb") return { html: wildOrbCardHTML(), className: "card-wild-wrap" };
-    return { html: playingCardHTML(symbolKey), className: "card-face-wrap" };
+    return { html: symbolCardHTML(symbolKey), className: "card-face-wrap" };
   }
 
   function randomSymbolKey() {
-    const keys = Object.keys(RANK_SUIT_MAP);
+    const keys = Object.keys(SYMBOL_META);
     return keys[Math.floor(Math.random() * keys.length)];
   }
 
-  window.CardArt = { cardFor, randomSymbolKey, RANK_SUIT_MAP };
+  window.CardArt = { cardFor, randomSymbolKey, SYMBOL_META, SYMBOL_ORDER, ICONS };
 })();

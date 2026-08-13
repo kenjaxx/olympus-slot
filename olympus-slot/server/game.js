@@ -11,7 +11,7 @@ const COLS = 5;
 // 0.0 = never win, 1.0 = always win. Change this to tune how often the house pays out.
 // In a real deployment, load this from an admin-only config file or database
 // instead of hardcoding it, so you can adjust it without redeploying.
-let WIN_RATE = 0.40;
+let WIN_RATE = 0.50;
 
 function setWinRate(rate) {
   WIN_RATE = Math.max(0, Math.min(1, rate));

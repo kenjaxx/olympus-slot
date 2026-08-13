@@ -25,6 +25,26 @@
     return CardArt.cardFor(symbolKey).className;
   }
 
+  // Animates a number climbing from its current displayed value up to
+  // `to` over `duration` ms — the "ticking up" feel real slot UIs use
+  // instead of just snapping a number into place.
+  function animateCount(el, to, duration, prefix) {
+    const from = Number((el.textContent || "0").replace(/[^0-9.-]/g, "")) || 0;
+    if (from === to) {
+      el.textContent = (prefix || "") + to.toLocaleString();
+      return;
+    }
+    const start = performance.now();
+    function step(now) {
+      const t = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - t, 3); // ease-out cubic
+      const val = Math.round(from + (to - from) * eased);
+      el.textContent = (prefix || "") + val.toLocaleString();
+      if (t < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
   function buildStaticGrid(values) {
     reelsEl.innerHTML = "";
     cells = [];
@@ -46,14 +66,20 @@
     }
   }
 
-  // Smooth reel-drop animation: each column slides down and eases to a
-  // stop, staggered left to right, with a soft tick as each lands.
+  // Reel-drop animation: symbols fall from top to bottom and settle, like
+  // a classic cascading slot reel. Each strip is built with the FINAL rows
+  // first (top of the strip) followed by a buffer of random filler rows
+  // below them. The strip starts shifted up so the viewport is looking at
+  // the random buffer, then eases down to translateY(0) — at which point
+  // the final rows land exactly in view. Columns are staggered left to
+  // right, with a soft tick as each one lands.
   function animateReelDrop(finalValues) {
     return new Promise((resolve) => {
       reelsEl.innerHTML = "";
       const extra = 10;
       const colDelays = [0, 120, 240, 360, 480];
       let maxDelay = 0;
+      const dropDistance = extra * (CELL_H + 6);
 
       for (let c = 0; c < COLS; c++) {
         const viewport = document.createElement("div");
@@ -61,11 +87,12 @@
           "overflow:hidden; height:" + (CELL_H * ROWS + (ROWS - 1) * 6) + "px; border-radius:6px;";
 
         const strip = document.createElement("div");
-        strip.style.cssText = "display:flex; flex-direction:column; gap:6px; transform: translateY(0px); transition: none;";
+        strip.style.cssText =
+          "display:flex; flex-direction:column; gap:6px; transform: translateY(-" + dropDistance + "px); transition: none;";
 
         const stripSyms = [];
-        for (let i = 0; i < extra; i++) stripSyms.push(CardArt.randomSymbolKey());
         for (let r = 0; r < ROWS; r++) stripSyms.push(finalValues[r * COLS + c]);
+        for (let i = 0; i < extra; i++) stripSyms.push(CardArt.randomSymbolKey());
 
         stripSyms.forEach((sym) => {
           const cell = document.createElement("div");
@@ -77,17 +104,20 @@
         viewport.appendChild(strip);
         reelsEl.appendChild(viewport);
 
-        const dropDistance = extra * (CELL_H + 6);
         const duration = 900 + c * 150;
         const stopTime = colDelays[c] + duration;
         maxDelay = Math.max(maxDelay, stopTime);
 
         setTimeout(() => {
           strip.style.transition = "transform " + duration + "ms cubic-bezier(0.15, 0.85, 0.35, 1)";
-          strip.style.transform = "translateY(-" + dropDistance + "px)";
+          strip.style.transform = "translateY(0px)";
         }, colDelays[c] + 20);
 
-        setTimeout(() => Sound.playReelStopTick(c), stopTime);
+        setTimeout(() => {
+          Sound.playReelStopTick(c);
+          viewport.classList.add("landed");
+          setTimeout(() => viewport.classList.remove("landed"), 220);
+        }, stopTime);
       }
 
       setTimeout(() => {
@@ -97,33 +127,35 @@
     });
   }
 
-  // Flashes a random subset of non-scatter cells to represent a tumble hit.
-  // If this round carries a multiplier orb, one flashed cell becomes a wild card.
-  function flashHitCells(count, comboIndex, orbMult) {
-    return new Promise((resolve) => {
-      const eligible = cellSymbols
-        .map((sym, i) => ({ sym, i }))
-        .filter((c) => c.sym !== "temple")
-        .map((c) => c.i);
+  // Spawns a quick radial burst of gold sparks from the center of a cell —
+  // the little "impact" flourish that sells a hit.
+  function spawnSparks(cellEl, count) {
+    const wrapRect = reelsWrapEl.getBoundingClientRect();
+    const cellRect = cellEl.getBoundingClientRect();
+    const cx = cellRect.left - wrapRect.left + cellRect.width / 2;
+    const cy = cellRect.top - wrapRect.top + cellRect.height / 2;
 
-      const idxs = new Set();
-      while (idxs.size < Math.min(count, eligible.length)) {
-        idxs.add(eligible[Math.floor(Math.random() * eligible.length)]);
-      }
-      idxs.forEach((i) => cells[i].classList.add("hit"));
+    for (let i = 0; i < count; i++) {
+      const angle = (Math.PI * 2 * i) / count + Math.random() * 0.6;
+      const dist = 22 + Math.random() * 16;
+      const spark = document.createElement("span");
+      spark.className = "spark";
+      spark.style.left = cx + "px";
+      spark.style.top = cy + "px";
+      spark.style.setProperty("--dx", Math.cos(angle) * dist + "px");
+      spark.style.setProperty("--dy", Math.sin(angle) * dist + "px");
+      reelsWrapEl.appendChild(spark);
+      setTimeout(() => spark.remove(), 550);
+    }
+  }
 
-      if (orbMult > 0 && idxs.size > 0) {
-        const orbIdx = [...idxs][Math.floor(Math.random() * idxs.size)];
-        cells[orbIdx].innerHTML = CardArt.cardFor("orb").html;
-      }
-
-      Sound.playTumbleHit(comboIndex);
-
-      setTimeout(() => {
-        idxs.forEach((i) => cells[i].classList.remove("hit"));
-        resolve();
-      }, 420);
-    });
+  // Expanding ring shockwave from the center of the reels — reserved for
+  // big wins, on top of the coin shower and shake.
+  function spawnShockwave() {
+    const ring = document.createElement("div");
+    ring.className = "shockwave";
+    reelsWrapEl.appendChild(ring);
+    setTimeout(() => ring.remove(), 650);
   }
 
   // Drops a handful of small gold coins from the top of the reels for a
@@ -143,19 +175,58 @@
     }
   }
 
+  // Flashes a random subset of non-scatter cells to represent a tumble hit,
+  // with a bouncy pop + a burst of sparks so it actually feels like an
+  // impact instead of a plain color swap. If this round carries a
+  // multiplier orb, one flashed cell becomes a wild card.
+  function flashHitCells(count, comboIndex, orbMult) {
+    return new Promise((resolve) => {
+      const eligible = cellSymbols
+        .map((sym, i) => ({ sym, i }))
+        .filter((c) => c.sym !== "temple")
+        .map((c) => c.i);
+
+      const idxs = new Set();
+      while (idxs.size < Math.min(count, eligible.length)) {
+        idxs.add(eligible[Math.floor(Math.random() * eligible.length)]);
+      }
+      idxs.forEach((i) => {
+        cells[i].classList.add("hit");
+        spawnSparks(cells[i], 5);
+      });
+
+      if (orbMult > 0 && idxs.size > 0) {
+        const orbIdx = [...idxs][Math.floor(Math.random() * idxs.size)];
+        cells[orbIdx].innerHTML = CardArt.cardFor("orb").html;
+        spawnSparks(cells[orbIdx], 8);
+      }
+
+      Sound.playTumbleHit(comboIndex);
+
+      setTimeout(() => {
+        idxs.forEach((i) => cells[i].classList.remove("hit"));
+        resolve();
+      }, 420);
+    });
+  }
+
   // `amount` is what's shown in the banner — pass the NET gain (win - bet),
   // not the raw payout, so the banner only celebrates when it should.
   function showWinBanner(amount, isBig) {
-    winBannerAmount.textContent = "+" + amount.toLocaleString();
+    winBannerAmount.textContent = "+0";
     winBannerLabel.textContent = isBig ? "BIG WIN" : "WIN";
+    winBanner.classList.remove("show");
+    void winBanner.offsetWidth; // restart the entrance animation every time
     winBanner.classList.toggle("big", isBig);
     winBanner.classList.add("show");
+    animateCount(winBannerAmount, amount, isBig ? 900 : 550, "+");
     spawnCoinShower(isBig ? 26 : 12);
 
     if (isBig) {
       reelsWrapEl.classList.remove("shake");
       void reelsWrapEl.offsetWidth;
       reelsWrapEl.classList.add("shake");
+      spawnShockwave();
       Sound.playBigWinFanfare();
     } else {
       Sound.playWinChime();
@@ -229,7 +300,7 @@
 
       function finish() {
         balanceEl.textContent = result.balance.toLocaleString();
-        lastwinEl.textContent = result.win.toLocaleString();
+        animateCount(lastwinEl, result.win, 500);
         multEl.textContent = result.multiplier + "x";
 
         if (result.freeSpins > 0) {
@@ -273,7 +344,9 @@
 
   // Orchestrates a full spin's visuals: drop -> scatter effect -> tumbles -> banner.
   async function runFullSequence(result, bet) {
+    reelsWrapEl.classList.add("spinning");
     await animateReelDrop(result.grid);
+    reelsWrapEl.classList.remove("spinning");
     await runScatterEffect(result.scatterCount, result.scatterTriggered);
     await playResultSequence(result, bet);
   }

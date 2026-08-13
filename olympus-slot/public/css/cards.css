@@ -33,25 +33,36 @@
   justify-content: center;
 }
 
-.pcard-rank {
-  position: absolute;
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 13px;
-  line-height: 1;
+/* ---- Mythology symbol card (grape / kylix / amphora / krater / gem / crown) ---- */
+.pcard-symbol {
+  flex-direction: column;
+  gap: 2px;
+  color: var(--tier-accent, var(--aegean));
 }
-.pcard-rank-tl { top: 4px; left: 5px; }
-.pcard-rank-br { bottom: 4px; right: 5px; transform: rotate(180deg); }
+.pcard-icon svg { display: block; width: 26px; height: 26px; }
+.pcard-name {
+  font-family: var(--font-body);
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: #4a3c26;
+  opacity: 0.75;
+}
 
-.pcard-suit-tl { position: absolute; top: 16px; left: 4px; }
-.pcard-suit-br { position: absolute; bottom: 16px; right: 4px; transform: rotate(180deg); }
-.pcard-suit-center { display: flex; align-items: center; justify-content: center; }
-.suit-icon { display: block; }
+/* Higher tiers get a bit more presence — bigger icon, a soft glow ring,
+   and (top tier) a gilded card background instead of plain parchment. */
+.pcard-tier4 .pcard-icon svg,
+.pcard-tier5 .pcard-icon svg,
+.pcard-tier6 .pcard-icon svg { width: 29px; height: 29px; }
 
-/* Suit colors — Aegean blue for spades/clubs, terracotta for hearts/diamonds,
-   instead of flat black/red, to stay inside the palette. */
-.pcard-spade { color: var(--aegean); }
-.pcard-heart { color: var(--terracotta); }
+.pcard-tier5 { filter: drop-shadow(0 0 3px rgba(194,59,59,0.35)); }
+.pcard-tier6 {
+  filter: drop-shadow(0 0 5px rgba(212,175,55,0.55));
+}
+.card-face-wrap.card-face-wrap:has(.pcard-tier6) {
+  background: linear-gradient(160deg, var(--gold-bright), var(--gold) 70%, var(--gold-deep));
+}
 
 /* ---- Scatter (coin) card ---- */
 .pcard-scatter {

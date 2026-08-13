@@ -16,11 +16,65 @@
   to   { box-shadow: 0 0 26px 8px rgba(212,175,55,0.95), 0 0 0 2px #fff; transform: scale(1.08); }
 }
 
-/* Flashed on cells during a tumble hit */
+/* Flashed on cells during a tumble hit — a bouncy overshoot pop instead of
+   a flat scale, so a hit reads as an impact rather than a color swap. */
 .cell.hit {
   background: linear-gradient(160deg, var(--gold-bright), var(--parchment));
-  box-shadow: 0 0 0 2px var(--gold) inset, 0 0 14px 2px rgba(212, 175, 55, 0.55);
-  transform: scale(1.06);
+  box-shadow: 0 0 0 2px var(--gold) inset, 0 0 18px 4px rgba(212, 175, 55, 0.65);
+  animation: hitPop 0.42s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes hitPop {
+  0%   { transform: scale(1); }
+  35%  { transform: scale(1.22); }
+  65%  { transform: scale(0.94); }
+  100% { transform: scale(1.06); }
+}
+
+/* Small gold spark, radiating out from a hit cell's center via --dx/--dy
+   set inline per-particle in reels.js */
+.spark {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  margin: -3px 0 0 -3px;
+  border-radius: 50%;
+  background: var(--gold-bright);
+  box-shadow: 0 0 6px 2px rgba(212, 175, 55, 0.85);
+  pointer-events: none;
+  z-index: 6;
+  animation: sparkFly 0.5s ease-out forwards;
+}
+@keyframes sparkFly {
+  0%   { transform: translate(0, 0) scale(1); opacity: 1; }
+  100% { transform: translate(var(--dx), var(--dy)) scale(0.25); opacity: 0; }
+}
+
+/* Reel viewport gets a quick bright flash the instant it lands */
+.reels-wrap .landed {
+  animation: reelLandFlash 0.22s ease-out;
+}
+@keyframes reelLandFlash {
+  0%   { filter: brightness(1.7); }
+  100% { filter: brightness(1); }
+}
+
+/* Expanding shockwave ring for big wins */
+.shockwave {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  margin: -10px 0 0 -10px;
+  border-radius: 50%;
+  border: 3px solid var(--gold-bright);
+  pointer-events: none;
+  z-index: 4;
+  animation: shockwaveExpand 0.6s ease-out forwards;
+}
+@keyframes shockwaveExpand {
+  0%   { transform: scale(0.3); opacity: 0.9; border-width: 4px; }
+  100% { transform: scale(9); opacity: 0; border-width: 1px; }
 }
 
 /* Screen shake for big wins / scatter trigger */
@@ -49,7 +103,7 @@
   100% { opacity: 0; }
 }
 
-/* ---- Win banner: laurel-wreath frame around the label ---- */
+/* ---- Win banner: laurel-wreath frame + rotating rays behind it ---- */
 .win-banner {
   position: absolute;
   inset: 0;
@@ -62,15 +116,41 @@
   border-radius: 10px;
   opacity: 0;
   pointer-events: none;
-  transform: scale(0.85);
-  transition: opacity 0.25s ease, transform 0.25s ease;
+  transform: scale(0.7);
+  transition: opacity 0.2s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  overflow: hidden;
 }
 .win-banner.show { opacity: 1; transform: scale(1); }
+
+/* Rotating conic-gradient rays, only visible while the banner is shown */
+.win-banner::before {
+  content: "";
+  position: absolute;
+  width: 260%;
+  height: 260%;
+  background: conic-gradient(
+    from 0deg,
+    rgba(212, 175, 55, 0.22) 0deg 8deg,
+    transparent 8deg 24deg
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.win-banner.show::before {
+  opacity: 1;
+  animation: rayRotate 6s linear infinite;
+}
+.win-banner.big::before { animation-duration: 3.2s; }
+@keyframes rayRotate {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
 
 .win-laurel {
   display: flex;
   align-items: center;
   gap: 8px;
+  position: relative;
 }
 .win-laurel svg { color: var(--gold-deep); }
 
@@ -86,12 +166,14 @@
   font-weight: 700;
   letter-spacing: 2px;
   color: var(--gold-bright);
+  position: relative;
 }
 #winBannerAmount {
   font-family: var(--font-mono);
   font-size: 27px;
   font-weight: 700;
   color: var(--parchment);
+  position: relative;
 }
 @keyframes pulseBig {
   from { transform: scale(1); }
