@@ -2,34 +2,28 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
-  <title>Olympus Slot (play money)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Mount Olympus Game Hall</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/base.css" />
-  <link rel="stylesheet" href="css/cards.css" />
-  <link rel="stylesheet" href="css/fx.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;800&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/lobby.css" />
 </head>
 <body>
-  <!-- Faint fluted-column ornamentation pinned to the viewport edges (desktop only — see base.css) -->
-  <div class="temple-columns temple-columns-left" aria-hidden="true"></div>
-  <div class="temple-columns temple-columns-right" aria-hidden="true"></div>
+  <div class="lobby-columns lobby-columns-left" aria-hidden="true"></div>
+  <div class="lobby-columns lobby-columns-right" aria-hidden="true"></div>
 
-  <div class="app">
+  <div class="lobby">
 
-    <header class="temple-header">
-      <svg class="sprig sprig-left" viewBox="0 0 30 60" width="20" height="40"><use href="#laurel-sprig"/></svg>
-      <div class="temple-title">
-        <h1>Olympus Slot</h1>
-        <p class="subtitle">Play-money demo — no real currency involved</p>
+    <header class="lobby-header">
+      <svg class="sprig sprig-left" viewBox="0 0 30 60" width="22" height="44"><use href="#laurel-sprig"/></svg>
+      <div class="lobby-title">
+        <h1>Mount Olympus</h1>
+        <p class="lobby-subtitle">Game Hall — play-money entertainment, no real currency ever</p>
       </div>
-      <svg class="sprig sprig-right" viewBox="0 0 30 60" width="20" height="40"><use href="#laurel-sprig"/></svg>
+      <svg class="sprig sprig-right" viewBox="0 0 30 60" width="22" height="44"><use href="#laurel-sprig"/></svg>
     </header>
 
-    <div class="gold-divider"><span class="divider-ornament"></span></div>
-
-    <!-- Reusable laurel sprig, referenced via <use> so the artwork lives in one place -->
     <svg width="0" height="0" style="position:absolute">
       <symbol id="laurel-sprig" viewBox="0 0 30 60" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
         <path d="M15 58 C15 40 15 20 15 2" />
@@ -44,134 +38,165 @@
       </symbol>
     </svg>
 
-    <!-- Only the paytable button remains here — player name / load / reset / mute removed -->
-    <div class="player-row player-row-single">
-      <button id="paytableBtn" title="Paytable">𝒊 Paytable</button>
-    </div>
+    <div class="gold-divider"><span class="divider-ornament"></span></div>
 
-    <div class="player-row">
-      <label for="loadAmount">Add funds</label>
-      <input type="number" id="loadAmount" min="100" step="100" value="1000" />
-      <button id="topupBtn">Add</button>
-    </div>
-
-    <!-- Voice is auto-picked for the best available announcer; left in the
-         DOM (audio.js reads it) but hidden since there's nothing to tune. -->
-    <div class="settings-row" style="display:none">
-      <label for="voiceSelect">Announcer voice</label>
-      <select id="voiceSelect">
-        <option value="">Auto (pleasant + excited)</option>
-      </select>
-    </div>
-
-    <div class="card">
-      <div class="stats-row">
-        <div>
-          <p class="label">Balance</p>
-          <p class="value" id="balance">1,000</p>
-        </div>
-        <div>
-          <p class="label">Multiplier</p>
-          <p class="value accent" id="mult">1x</p>
-        </div>
-        <div>
-          <p class="label">Last win</p>
-          <p class="value success" id="lastwin">0</p>
-        </div>
-      </div>
-
-      <p class="net-line" id="netLine"></p>
-
-      <div id="freespinsbadge" class="badge">Free spins: <span id="fscount">0</span> left</div>
-      <div id="autospinbadge" class="badge autospin-badge">Auto spin: <span id="autospinsleft">0</span> left</div>
-
-      <div class="reels-wrap">
-        <div id="reels" class="reels"></div>
-        <div id="scatterFlash" class="scatter-flash"></div>
-        <div id="winBanner" class="win-banner">
-          <div class="win-laurel">
-            <svg class="wreath-left" viewBox="0 0 30 60" width="22" height="44"><use href="#laurel-sprig"/></svg>
-            <span id="winBannerLabel">WIN</span>
-            <svg class="wreath-right" viewBox="0 0 30 60" width="22" height="44"><use href="#laurel-sprig"/></svg>
-          </div>
-          <span id="winBannerAmount">0</span>
-        </div>
-      </div>
-
-      <p id="msg" class="msg">Land 4+ scatters to trigger free spins</p>
-
-      <div class="bet-row">
-        <label>Bet</label>
-        <input type="range" min="10" max="500" step="10" value="20" id="bet" />
-        <input type="number" min="10" step="10" value="20" id="betNumber" />
-      </div>
-      <div class="bet-quick-row">
-        <button class="quickbtn" id="betHalf">½</button>
-        <button class="quickbtn" id="betDouble">2×</button>
-        <button class="quickbtn" id="betMax">Max</button>
-      </div>
-
-      <button id="spinbtn" class="spin-btn">Spin</button>
-
-      <div class="autospin-row">
-        <label for="autospinCount">Auto spin</label>
-        <select id="autospinCount">
-          <option value="10">10</option>
-          <option value="25">25</option>
-          <option value="50">50</option>
-          <option value="100">100</option>
-        </select>
-        <button id="autospinBtn" class="autospin-btn">Start</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Paytable / info modal -->
-  <div id="paytableModal" class="paytable-modal">
-    <div class="paytable-sheet">
-      <div class="paytable-head">
-        <h2>Symbol Values</h2>
-        <button id="paytableClose" class="paytable-close" aria-label="Close">✕</button>
-      </div>
-      <ul id="paytableList" class="paytable-list"></ul>
-      <div class="paytable-rules">
-        <p><strong>Scatter (coin):</strong> land 4 or more anywhere to trigger 10 free spins. 3 scatters is a near miss.</p>
-        <p><strong>Wild orb:</strong> appears on a winning hit and adds its value to the round multiplier.</p>
-      </div>
-      <p class="paytable-disclaimer">Play-money entertainment only. No real currency, purchases, or withdrawals are involved.</p>
-    </div>
-  </div>
-
-  <!-- Free-spins TRIGGER overlay — shown the moment a scatter trigger lands -->
-  <div id="fsTriggerOverlay" class="fs-total-overlay fs-trigger-overlay">
-    <div class="fs-total-card fs-trigger-card">
-      <div class="bell-wrap">
-        <svg class="bell-icon" viewBox="0 0 64 64" width="72" height="72" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
-          <path d="M32 6c-3 0-5 2-5 5v2C19 15 14 22 14 31v10l-5 8h46l-5-8V31c0-9-5-16-13-18v-2c0-3-2-5-5-5z"/>
-          <path d="M26 49a6 6 0 0 0 12 0"/>
+    <!-- ---- Featured hero ---- -->
+    <section class="hero-card" id="heroOlympus">
+      <div class="hero-glow" aria-hidden="true"></div>
+      <div class="hero-badge">★ Featured</div>
+      <div class="hero-icon">
+        <svg viewBox="0 0 64 64" width="56" height="56" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round">
+          <path d="M22 6h20v7h-20Z"/>
+          <path d="M22 13q-15 4 -15 22q0 21 25 21q25 0 25 -21q0 -18 -15 -22"/>
+          <path d="M11 25q-7 3 -5 13"/>
+          <path d="M53 25q7 3 5 13"/>
         </svg>
       </div>
-      <p class="fs-trigger-title">Free Spins!</p>
-      <p class="fs-trigger-text">You have <span id="fsAwardCount">10</span> free spins!</p>
-      <button id="fsTriggerContinue" class="fs-total-btn">Continue</button>
+      <div class="hero-body">
+        <h2>Olympus Slot</h2>
+        <p>5×4 tumbling-reel slot with scatter free spins and multiplier orbs. A treasury of Greek gold, ready to spin.</p>
+        <div class="hero-tags">
+          <span class="tag">Slots</span>
+          <span class="tag">Free Spins</span>
+          <span class="tag tag-new">New</span>
+        </div>
+      </div>
+      <a href="/games/olympus-slot/intro.html" class="hero-play">Play Now</a>
+    </section>
+
+    <!-- ---- Search + filters ---- -->
+    <div class="lobby-controls">
+      <div class="search-wrap">
+        <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="9" r="6"/><path d="M14 14l4 4"/></svg>
+        <input type="text" id="gameSearch" placeholder="Search games…" autocomplete="off" />
+      </div>
+      <div class="filter-pills" id="filterPills">
+        <button class="pill active" data-filter="all">All</button>
+        <button class="pill" data-filter="slots">Slots</button>
+        <button class="pill" data-filter="soon">Coming Soon</button>
+      </div>
     </div>
+
+    <!-- ---- Game grid ---- -->
+    <section class="game-grid" id="gameGrid">
+
+      <a href="/games/olympus-slot/intro.html" class="game-card" data-name="olympus slot" data-cat="slots">
+        <div class="card-thumb thumb-olympus">
+          <svg viewBox="0 0 64 64" width="34" height="34" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round">
+            <path d="M22 6h20v7h-20Z"/>
+            <path d="M22 13q-15 4 -15 22q0 21 25 21q25 0 25 -21q0 -18 -15 -22"/>
+          </svg>
+        </div>
+        <div class="card-body">
+          <h3>Olympus Slot</h3>
+          <span class="card-cat">Slots</span>
+        </div>
+        <span class="card-cta">Play</span>
+        <span class="card-flag flag-new">New</span>
+      </a>
+
+      <div class="game-card locked" data-name="atlantis abyss" data-cat="soon">
+        <div class="card-thumb thumb-atlantis">
+          <svg viewBox="0 0 64 64" width="34" height="34" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+            <path d="M4 40q6 -6 12 0t12 0t12 0t12 0t12 0"/>
+            <path d="M4 50q6 -6 12 0t12 0t12 0t12 0t12 0"/>
+            <path d="M32 8v24"/><path d="M22 18l10 -10l10 10"/>
+          </svg>
+        </div>
+        <div class="card-body">
+          <h3>Atlantis Abyss</h3>
+          <span class="card-cat">Slots</span>
+        </div>
+        <span class="card-cta">Locked</span>
+        <span class="card-flag flag-soon">Coming Soon</span>
+      </div>
+
+      <div class="game-card locked" data-name="pharaoh's vault" data-cat="soon">
+        <div class="card-thumb thumb-pharaoh">
+          <svg viewBox="0 0 64 64" width="34" height="34" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round">
+            <path d="M32 10l24 40H8Z"/><path d="M32 10v40"/><path d="M20 34h24"/>
+          </svg>
+        </div>
+        <div class="card-body">
+          <h3>Pharaoh's Vault</h3>
+          <span class="card-cat">Slots</span>
+        </div>
+        <span class="card-cta">Locked</span>
+        <span class="card-flag flag-soon">Coming Soon</span>
+      </div>
+
+      <div class="game-card locked" data-name="dragon hoard" data-cat="soon">
+        <div class="card-thumb thumb-dragon">
+          <svg viewBox="0 0 64 64" width="34" height="34" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round">
+            <path d="M10 44q4 -22 22 -22q18 0 22 18"/>
+            <path d="M14 30l-6 -4l4 8Z"/><path d="M50 30l6 -4l-4 8Z"/>
+            <circle cx="24" cy="34" r="2" fill="currentColor" stroke="none"/>
+            <circle cx="40" cy="34" r="2" fill="currentColor" stroke="none"/>
+          </svg>
+        </div>
+        <div class="card-body">
+          <h3>Dragon Hoard</h3>
+          <span class="card-cat">Slots</span>
+        </div>
+        <span class="card-cta">Locked</span>
+        <span class="card-flag flag-soon">Coming Soon</span>
+      </div>
+
+      <div class="game-card locked" data-name="wild frontier" data-cat="soon">
+        <div class="card-thumb thumb-frontier">
+          <svg viewBox="0 0 64 64" width="34" height="34" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round">
+            <circle cx="32" cy="32" r="22"/>
+            <path d="M32 10v10M32 44v10M10 32h10M44 32h10M17 17l7 7M40 40l7 7M47 17l-7 7M24 40l-7 7"/>
+          </svg>
+        </div>
+        <div class="card-body">
+          <h3>Wild Frontier</h3>
+          <span class="card-cat">Slots</span>
+        </div>
+        <span class="card-cta">Locked</span>
+        <span class="card-flag flag-soon">Coming Soon</span>
+      </div>
+
+      <div class="game-card locked" data-name="neon nights" data-cat="soon">
+        <div class="card-thumb thumb-neon">
+          <svg viewBox="0 0 64 64" width="34" height="34" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round">
+            <path d="M28 6L14 34h12l-4 24l24 -32H32Z"/>
+          </svg>
+        </div>
+        <div class="card-body">
+          <h3>Neon Nights</h3>
+          <span class="card-cat">Slots</span>
+        </div>
+        <span class="card-cta">Locked</span>
+        <span class="card-flag flag-soon">Coming Soon</span>
+      </div>
+
+      <div class="game-card locked" data-name="pirate's bounty" data-cat="soon">
+        <div class="card-thumb thumb-pirate">
+          <svg viewBox="0 0 64 64" width="34" height="34" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round">
+            <circle cx="32" cy="26" r="12"/>
+            <path d="M14 44q18 10 36 0"/><path d="M20 26h6M38 26h6M26 34q6 4 12 0"/>
+          </svg>
+        </div>
+        <div class="card-body">
+          <h3>Pirate's Bounty</h3>
+          <span class="card-cat">Slots</span>
+        </div>
+        <span class="card-cta">Locked</span>
+        <span class="card-flag flag-soon">Coming Soon</span>
+      </div>
+
+    </section>
+
+    <p class="no-results" id="noResults" style="display:none">No games match your search.</p>
+
+    <footer class="lobby-footer">
+      <p>Play-money entertainment only. No real currency, purchases, or withdrawals are involved anywhere in this game hall.</p>
+    </footer>
   </div>
 
-  <!-- Free-spins bonus-round total-win summary, shown once the bonus round ends -->
-  <div id="freeSpinTotalOverlay" class="fs-total-overlay">
-    <div class="fs-total-card">
-      <p class="fs-total-label">Free Spins Complete</p>
-      <p class="fs-total-amount" id="fsTotalAmount">0</p>
-      <button id="fsTotalContinue" class="fs-total-btn">Continue</button>
-    </div>
-  </div>
+  <div class="toast" id="toast"></div>
 
-  <script src="js/cardArt.js"></script>
-  <script src="js/audio.js"></script>
-  <script src="js/reels.js"></script>
-  <script src="js/betControls.js"></script>
-  <script src="js/autospin.js"></script>
-  <script src="js/paytable.js"></script>
-  <script src="js/main.js"></script>
+  <script src="js/lobby.js"></script>
 </body>
 </html>

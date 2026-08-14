@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Olympus Slot — Loading</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;800&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/intro.css" />
+</head>
+<body>
+  <div class="intro-app">
+
+    <!-- ---- Loading screen ---- -->
+    <section id="loadingScreen" class="loading-screen">
+      <div class="loading-emblem">
+        <svg viewBox="0 0 64 64" width="52" height="52" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round">
+          <path d="M22 6h20v7h-20Z"/>
+          <path d="M22 13q-15 4 -15 22q0 21 25 21q25 0 25 -21q0 -18 -15 -22"/>
+          <path d="M11 25q-7 3 -5 13"/>
+          <path d="M53 25q7 3 5 13"/>
+        </svg>
+        <svg class="loading-ring" viewBox="0 0 100 100" width="110" height="110">
+          <circle cx="50" cy="50" r="44" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" pathLength="100" stroke-dasharray="26 74"/>
+        </svg>
+      </div>
+      <p class="loading-title">Olympus Slot</p>
+      <div class="loading-bar-track">
+        <div class="loading-bar-fill" id="loadingBarFill"></div>
+      </div>
+      <p class="loading-status" id="loadingStatus">Loading assets…</p>
+    </section>
+
+    <!-- ---- Instructions / "Start Game" screen ---- -->
+    <section id="introScreen" class="intro-screen">
+      <a href="/" class="lobby-back">‹ Game Hall</a>
+
+      <div class="intro-hero">
+        <div class="intro-icon">
+          <svg viewBox="0 0 64 64" width="44" height="44" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round">
+            <path d="M22 6h20v7h-20Z"/>
+            <path d="M22 13q-15 4 -15 22q0 21 25 21q25 0 25 -21q0 -18 -15 -22"/>
+            <path d="M11 25q-7 3 -5 13"/>
+            <path d="M53 25q7 3 5 13"/>
+          </svg>
+        </div>
+        <h1>Olympus Slot</h1>
+        <p class="intro-tagline">A 5×4 tumbling-reel slot with scatter free spins and multiplier orbs.</p>
+        <div class="intro-tags">
+          <span class="tag">Slots</span>
+          <span class="tag">Free Spins</span>
+          <span class="tag tag-new">New</span>
+        </div>
+      </div>
+
+      <div class="intro-card">
+        <h2>How to Play</h2>
+        <ul class="intro-rules">
+          <li>
+            <span class="rule-icon">1</span>
+            <span>Set your bet using the slider, number field, or the ½ / 2× / Max quick buttons, then hit <strong>Spin</strong>.</span>
+          </li>
+          <li>
+            <span class="rule-icon">2</span>
+            <span>Matching clusters pay out and <strong>tumble</strong> — winning tiles clear and new ones drop in, chaining further wins in the same spin.</span>
+          </li>
+          <li>
+            <span class="rule-icon">3</span>
+            <span>A <strong>wild orb</strong> can appear on a winning tile and adds its value to that spin's multiplier.</span>
+          </li>
+          <li>
+            <span class="rule-icon">4</span>
+            <span>Land <strong>4 or more scatter coins</strong> anywhere on the grid to trigger <strong>10 free spins</strong>. 3 scatters is a near miss.</span>
+          </li>
+          <li>
+            <span class="rule-icon">5</span>
+            <span>Use <strong>Auto Spin</strong> to queue up multiple spins in a row — it stops automatically if your balance runs low.</span>
+          </li>
+        </ul>
+        <p class="intro-disclaimer">Play-money entertainment only. No real currency, purchases, or withdrawals are involved.</p>
+      </div>
+
+      <button id="startGameBtn" class="start-game-btn">Start Game</button>
+    </section>
+
+  </div>
+
+  <script src="js/intro.js"></script>
+</body>
+</html>

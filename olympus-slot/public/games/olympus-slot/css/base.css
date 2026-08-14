@@ -629,3 +629,17 @@ h1 {
   .stats-row .value { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .stats-row .label { font-size: 9px; }
 }
+
+.lobby-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-faint);
+  text-decoration: none;
+  margin-bottom: 0.6rem;
+  transition: color 0.15s;
+}
+.lobby-back:hover { color: var(--gold-bright); }
