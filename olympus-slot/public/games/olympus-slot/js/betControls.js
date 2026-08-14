@@ -1,13 +1,12 @@
 // betControls.js
 // Lets the player drag a slider OR type an exact amount; both stay in sync.
-// Quick buttons (½ / 2x / Max) jump to common amounts. There's no upper
-// cap on the typed bet — the slider just covers a comfortable everyday
-// range, and typing (or the Max button) can go past it freely.
+// Quick buttons (½ / 2x / Max) jump to common amounts.
 //
-// When the bet goes past the slider's fixed ceiling, the handle pins at
-// the end — which on its own looks like the slider is just stuck. A small
-// "MAX RANGE" hint + a highlighted number field make that state legible
-// instead of silent.
+// No bet can ever exceed the player's current balance. "Max" is exact
+// (no step-rounding) so it always lands on your full balance.
+//
+// During free spins, setDisabled(true) locks every control — the bonus
+// round always plays at the bet that triggered it, never the slider.
 
 (function () {
   const MIN_BET = 10;
@@ -20,9 +19,8 @@
   const doubleBtn = document.getElementById("betDouble");
   const maxBtn = document.getElementById("betMax");
   const balanceEl = document.getElementById("balance");
+  const lockHintEl = document.getElementById("betLockHint");
 
-  // Small hint label, injected once rather than baked into index.html so
-  // this file stays a self-contained drop-in.
   let hintEl = document.querySelector(".bet-overflow-hint");
   if (!hintEl && betRowEl) {
     hintEl = document.createElement("span");
@@ -31,28 +29,39 @@
     betRowEl.appendChild(hintEl);
   }
 
-  function clamp(value) {
-    if (!Number.isFinite(value)) return MIN_BET;
-    const rounded = Math.round(value / STEP) * STEP;
-    return Math.max(MIN_BET, rounded);
-  }
-
-  function setBet(value) {
-    const clamped = clamp(value);
-    numberEl.value = clamped;
-    const sliderMax = Number(sliderEl.max);
-    // The slider's own max is a fixed, comfortable ceiling for dragging —
-    // once the bet goes past it (typed, or via Max) the handle just pins
-    // at the end while the number field keeps showing the real amount.
-    sliderEl.value = Math.min(clamped, sliderMax);
-    if (betRowEl) betRowEl.classList.toggle("bet-overflow", clamped > sliderMax);
-    return clamped;
-  }
-
   function currentBalance() {
     const raw = (balanceEl.textContent || "").replace(/,/g, "");
     const n = Number(raw);
     return Number.isFinite(n) ? n : MIN_BET;
+  }
+
+  function clamp(value, exact) {
+    if (!Number.isFinite(value)) return MIN_BET;
+
+    const balance = currentBalance();
+    let result;
+
+    if (exact) {
+      result = Math.max(MIN_BET, Math.floor(value));
+      if (result > balance) result = Math.max(MIN_BET, Math.floor(balance));
+    } else {
+      result = Math.max(MIN_BET, Math.round(value / STEP) * STEP);
+      if (result > balance) {
+        result = Math.floor(balance / STEP) * STEP;
+        if (result < MIN_BET) result = MIN_BET;
+      }
+    }
+
+    return result;
+  }
+
+  function setBet(value, exact) {
+    const clamped = clamp(value, exact);
+    numberEl.value = clamped;
+    const sliderMax = Number(sliderEl.max);
+    sliderEl.value = Math.min(clamped, sliderMax);
+    if (betRowEl) betRowEl.classList.toggle("bet-overflow", clamped > sliderMax);
+    return clamped;
   }
 
   sliderEl.addEventListener("input", () => setBet(Number(sliderEl.value)));
@@ -60,15 +69,25 @@
 
   halfBtn.addEventListener("click", () => setBet(Number(numberEl.value) / 2));
   doubleBtn.addEventListener("click", () => setBet(Number(numberEl.value) * 2));
-  maxBtn.addEventListener("click", () => setBet(currentBalance())); // all-in
+  maxBtn.addEventListener("click", () => setBet(currentBalance(), true)); // exact — all in
 
   function getBet() {
     return Number(numberEl.value);
   }
 
-  // Initialize overflow state in case the starting value already exceeds
-  // the slider's ceiling (e.g. restored from a future persistence layer).
+  // Locks/unlocks every bet control — used while a free-spins bonus round
+  // is auto-playing, since it always plays at the bet that triggered it.
+  function setDisabled(disabled) {
+    sliderEl.disabled = disabled;
+    numberEl.disabled = disabled;
+    halfBtn.disabled = disabled;
+    doubleBtn.disabled = disabled;
+    maxBtn.disabled = disabled;
+    if (betRowEl) betRowEl.classList.toggle("bet-locked", disabled);
+    if (lockHintEl) lockHintEl.style.display = disabled ? "block" : "none";
+  }
+
   setBet(Number(numberEl.value) || MIN_BET);
 
-  window.BetControls = { getBet, setBet, MIN_BET };
+  window.BetControls = { getBet, setBet, setDisabled, MIN_BET };
 })();

@@ -1,0 +1,155 @@
+/* ---------------------------------------------------------------------
+   Olympus scene backdrop — a dusk sky over Mount Olympus with a ruined
+   temple silhouette, drifting clouds and twinkling stars. Pure CSS/SVG,
+   fixed behind the app content (which sits at z-index 1, see base.css).
+--------------------------------------------------------------------- */
+
+.olympus-scene {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* ---- Sky: deep night at the top, warming to a golden dusk band low
+   down, echoing the gold/parchment palette used throughout the UI ---- */
+.scene-sky {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    #08051200 0%,
+    #0a0620 0%,
+    #170f38 22%,
+    #2c1a52 40%,
+    #4a2760 55%,
+    #7a3f5e 68%,
+    #b9633f 82%,
+    #e8a04f 94%,
+    #f4c06a 100%
+  );
+}
+
+/* ---- Sun/moon glow, low on the horizon ---- */
+.scene-sun {
+  position: absolute;
+  left: 50%;
+  top: 40%;
+  width: 260px;
+  height: 260px;
+  margin: -130px 0 0 -130px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(255, 214, 140, 0.55) 0%,
+    rgba(255, 190, 110, 0.25) 35%,
+    rgba(255, 190, 110, 0.08) 60%,
+    transparent 75%
+  );
+  filter: blur(1px);
+  animation: sunPulse 6s ease-in-out infinite;
+}
+@keyframes sunPulse {
+  0%, 100% { opacity: 0.85; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.05); }
+}
+
+/* ---- Stars — layered dots, twinkling, confined to the upper sky ---- */
+.scene-stars {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 55%;
+  background-image:
+    radial-gradient(1.6px 1.6px at 8% 12%, rgba(255,255,255,0.9), transparent),
+    radial-gradient(1.3px 1.3px at 18% 25%, rgba(255,255,255,0.7), transparent),
+    radial-gradient(1.8px 1.8px at 28% 8%, rgba(255,255,255,0.85), transparent),
+    radial-gradient(1.2px 1.2px at 40% 30%, rgba(255,255,255,0.6), transparent),
+    radial-gradient(1.6px 1.6px at 52% 15%, rgba(255,255,255,0.8), transparent),
+    radial-gradient(1.3px 1.3px at 63% 35%, rgba(255,255,255,0.65), transparent),
+    radial-gradient(1.8px 1.8px at 72% 10%, rgba(255,255,255,0.9), transparent),
+    radial-gradient(1.2px 1.2px at 84% 28%, rgba(255,255,255,0.6), transparent),
+    radial-gradient(1.6px 1.6px at 92% 14%, rgba(255,255,255,0.8), transparent),
+    radial-gradient(1.3px 1.3px at 5% 40%, rgba(212,175,55,0.6), transparent),
+    radial-gradient(1.3px 1.3px at 96% 42%, rgba(212,175,55,0.55), transparent),
+    radial-gradient(1.2px 1.2px at 35% 45%, rgba(255,255,255,0.5), transparent),
+    radial-gradient(1.2px 1.2px at 78% 46%, rgba(255,255,255,0.5), transparent);
+  background-repeat: no-repeat;
+  animation: starTwinkle 3.5s ease-in-out infinite alternate;
+}
+@keyframes starTwinkle {
+  from { opacity: 0.65; }
+  to   { opacity: 1; }
+}
+
+/* ---- Clouds — soft, blurred, drifting slowly across the upper sky ---- */
+.scene-clouds {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: 45%;
+}
+.cloud { fill: rgba(255, 255, 255, 0.07); }
+.cloud-a { animation: driftRight 90s linear infinite; }
+.cloud-b { animation: driftLeft 110s linear infinite; }
+.cloud-c { animation: driftRight 130s linear infinite; }
+@keyframes driftRight {
+  from { transform: translateX(-60px); }
+  to   { transform: translateX(60px); }
+}
+@keyframes driftLeft {
+  from { transform: translateX(60px); }
+  to   { transform: translateX(-60px); }
+}
+
+/* ---- Mount Olympus silhouette ---- */
+.scene-mountains {
+  position: absolute;
+  bottom: 0; left: 0;
+  width: 100%;
+  height: 38%;
+}
+.mountain-far { fill: #2c1e4a; opacity: 0.55; }
+.mountain-near { fill: #150d28; opacity: 0.92; }
+.mountain-glow {
+  fill: none;
+  stroke: rgba(243, 217, 128, 0.35);
+  stroke-width: 1.5;
+  filter: blur(0.5px);
+}
+
+/* ---- Ruined temple / colonnade silhouette, flanking the reels ---- */
+.scene-temple {
+  position: absolute;
+  bottom: 0; left: 0;
+  width: 100%;
+  height: 22%;
+}
+.temple-silhouette rect,
+.temple-silhouette polygon {
+  fill: #0c0818;
+  opacity: 0.9;
+}
+
+/* ---- Gentle vignette so foreground UI panels stay legible over the
+   busier art behind them ---- */
+.scene-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 700px 900px at 50% 45%,
+    rgba(10, 6, 20, 0.35) 0%,
+    rgba(10, 6, 20, 0.55) 55%,
+    rgba(10, 6, 20, 0.75) 100%
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scene-sun,
+  .scene-stars,
+  .cloud-a,
+  .cloud-b,
+  .cloud-c {
+    animation: none;
+  }
+}

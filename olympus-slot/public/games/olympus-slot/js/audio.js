@@ -1,22 +1,20 @@
 // audio.js
-// Web Audio tones (no audio files needed) + a speech-synthesis announcer.
-// AudioContext is created lazily on first spin (browser autoplay rules
-// require a user gesture first).
+// Web Audio tones (no audio files needed) + a speech-synthesis announcer,
+// plus a jolly background music loop.
 //
-// Speech is queued rather than interrupted: calling speak() while a line is
-// already playing used to call speechSynthesis.cancel(), which chopped off
-// whatever was currently being said (e.g. "6x" got killed mid-word the
-// instant "Big win!" fired right after it). Now the currently-playing line
-// always finishes; only the next *pending* line gets replaced, so during a
-// fast autospin session the queue never backs up into a long ramble either.
+// IMPORTANT: mute only affects the background MUSIC. All sound effects
+// (reel ticks, tumble hits, multiplier stingers, scatter cues, win
+// chimes/fanfares, the spoken announcer lines, and haptics) always play,
+// regardless of mute state — playTone() itself has no mute check at all;
+// only the music scheduler checks `musicMuted` before calling it.
 //
-// A light haptics layer (vibrate()) rides on the same mute toggle as sound,
-// so muting silences buzzes too, and no-ops cleanly wherever the Vibration
-// API isn't available (desktop, iOS Safari, etc).
+// AudioContext is created lazily on first sound (browser autoplay rules
+// require a user gesture first) — main.js kicks this off on the player's
+// first click on the game page.
 
 (function () {
   let audioCtx = null;
-  let muted = false;
+  let musicMuted = false;
   let chosenVoice = null;
   let userPickedVoice = false;
 
@@ -42,8 +40,10 @@
     return audioCtx;
   }
 
+  // No mute check in here on purpose — this is shared by both sound
+  // effects (always on) and music (gated by the caller, see the music
+  // section below).
   function playTone({ freq = 440, duration = 0.15, type = "sine", volume = 0.15, delay = 0, glideTo = null }) {
-    if (muted) return;
     const ctx = getAudioCtx();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
@@ -60,12 +60,8 @@
     osc.stop(ctx.currentTime + delay + duration + 0.02);
   }
 
-  // Light haptic buzz for mobile — piggybacks on the same mute toggle as
-  // sound, so muting the game silences vibration too. Silently no-ops on
-  // desktop or any browser without the Vibration API, and never lets a
-  // haptics failure interrupt gameplay.
+  // Haptics are a sound-effect-adjacent cue, not music — always active.
   function vibrate(pattern) {
-    if (muted) return;
     if (!("vibrate" in navigator)) return;
     try {
       navigator.vibrate(pattern);
@@ -122,8 +118,6 @@
   function speakNow(text) {
     const utter = new SpeechSynthesisUtterance(text);
     if (chosenVoice) utter.voice = chosenVoice;
-    // Slower than the very first version — 1.15 read as rushed/clipped on
-    // lines like "Big win!". 0.92 stays upbeat but is actually intelligible.
     utter.rate = 0.92;
     utter.pitch = 1.15;
     utter.volume = 0.9;
@@ -143,11 +137,8 @@
     window.speechSynthesis.speak(utter);
   }
 
-  // Queues a line to be spoken. If something is already playing, this line
-  // just becomes "next up" (replacing any previous pending line) — it never
-  // interrupts what's currently being said.
+  // The announcer voice is a sound effect, not music — always active.
   function speak(text) {
-    if (muted) return;
     if (!("speechSynthesis" in window)) return;
     if (speaking) {
       pendingText = text;
@@ -193,9 +184,6 @@
     vibrate([20, 40, 20, 40, 60]);
   }
 
-  // Bright, ringing bell-like chord used when the free-spins TRIGGER
-  // overlay appears — distinct from playScatterTrigger's quick chime so
-  // the big "you won free spins" moment feels like its own event.
   function playBellRing(freeSpinsAwarded) {
     const notes = [1046.5, 1318.5, 1568, 2093];
     notes.forEach((f, i) => {
@@ -220,7 +208,6 @@
   }
 
   function playPopBurst(count) {
-    if (muted) return;
     const n = Math.min(6, count);
     for (let i = 0; i < n; i++) {
       playTone({
@@ -234,7 +221,6 @@
   }
 
   function playSuspenseBuildup(duration) {
-    if (muted) return;
     const steps = Math.max(3, Math.floor(duration / 90));
     for (let s = 0; s < steps; s++) {
       const t = s / steps;
@@ -255,17 +241,85 @@
     setTimeout(() => speak("Total win!"), notes.length * 150 + 350);
   }
 
-  function setMuted(value) {
-    muted = value;
-    if (muted && "speechSynthesis" in window) {
-      window.speechSynthesis.cancel();
-      speaking = false;
-      pendingText = null;
+  // -----------------------------------------------------------------
+  // Background music — a bright, bouncy circus/carnival-style loop.
+  // This is the ONLY thing the mute toggle controls. `musicMuted` is
+  // checked here, before each note — playTone itself is never gated.
+  // -----------------------------------------------------------------
+  const TEMPO_BPM = 130;
+  const BEAT_SEC = 60 / TEMPO_BPM;
+  const EIGHTH_SEC = BEAT_SEC / 2;
+
+  const NOTE = {
+    C4: 261.63, D4: 293.66, E4: 329.63, F4: 349.23, G4: 392.0, A4: 440.0,
+    C5: 523.25, D5: 587.33, E5: 659.25, F5: 698.46, G5: 783.99, A5: 880.0, C6: 1046.5,
+  };
+
+  const PHRASE_A = [
+    NOTE.C5, NOTE.E5, NOTE.G5, NOTE.E5, NOTE.C5, NOTE.E5, NOTE.G5, NOTE.C6,
+    NOTE.C6, NOTE.G5, NOTE.E5, NOTE.G5, NOTE.A5, NOTE.G5, NOTE.E5, NOTE.D5,
+  ];
+  const PHRASE_B = [
+    NOTE.E5, NOTE.G5, NOTE.C6, NOTE.G5, NOTE.E5, NOTE.D5, NOTE.E5, NOTE.G5,
+    NOTE.F5, NOTE.A5, NOTE.G5, NOTE.F5, NOTE.E5, NOTE.D5, NOTE.C5, NOTE.D5,
+  ];
+  const BASSLINE = [
+    NOTE.C4, null, NOTE.G4, null, NOTE.C4, null, NOTE.F4, null,
+    NOTE.C4, null, NOTE.G4, null, NOTE.F4, null, NOTE.G4, null,
+  ];
+
+  let musicRunning = false;
+  let musicTimer = null;
+  let phraseToggle = false;
+
+  function playMusicStep(freq, isBass) {
+    if (musicMuted) return;
+    if (freq == null) return;
+    if (isBass) {
+      playTone({ freq: freq / 2, duration: BEAT_SEC * 0.9, type: "sine", volume: 0.05 });
+    } else {
+      playTone({ freq, duration: EIGHTH_SEC * 0.85, type: "triangle", volume: 0.075 });
+      if (Math.random() < 0.3) {
+        playTone({ freq: freq * 2, duration: EIGHTH_SEC * 0.4, type: "sine", volume: 0.02 });
+      }
     }
   }
 
+  function scheduleMusicPhrase() {
+    if (!musicRunning) return;
+    const phrase = phraseToggle ? PHRASE_B : PHRASE_A;
+    phraseToggle = !phraseToggle;
+
+    phrase.forEach((freq, i) => {
+      const atMs = i * EIGHTH_SEC * 1000;
+      setTimeout(() => playMusicStep(freq, false), atMs);
+      setTimeout(() => playMusicStep(BASSLINE[i], true), atMs);
+    });
+
+    musicTimer = setTimeout(scheduleMusicPhrase, phrase.length * EIGHTH_SEC * 1000);
+  }
+
+  function startBackgroundMusic() {
+    if (musicRunning) return;
+    musicRunning = true;
+    phraseToggle = false;
+    scheduleMusicPhrase();
+  }
+
+  function stopBackgroundMusic() {
+    musicRunning = false;
+    clearTimeout(musicTimer);
+    musicTimer = null;
+  }
+
+  // Controls ONLY the music — sound effects, haptics, and speech are
+  // unaffected by this.
+  function setMuted(value) {
+    musicMuted = value;
+  }
+
   function isMuted() {
-    return muted;
+    return musicMuted;
   }
 
   window.Sound = {
@@ -282,6 +336,8 @@
     playPopBurst,
     playSuspenseBuildup,
     playFreeSpinTotalFanfare,
+    startBackgroundMusic,
+    stopBackgroundMusic,
     setMuted,
     isMuted,
   };

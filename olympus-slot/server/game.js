@@ -9,8 +9,6 @@ const COLS = 5;
 
 // ---- THE CONTROL KNOB ----
 // 0.0 = never win, 1.0 = always win. Change this to tune how often the house pays out.
-// In a real deployment, load this from an admin-only config file or database
-// instead of hardcoding it, so you can adjust it without redeploying.
 let WIN_RATE = 0.45;
 
 function setWinRate(rate) {
@@ -30,22 +28,28 @@ function randomGrid() {
 }
 
 // Resolves one full spin, including any chained tumbles, server-side.
-// Returns everything the client needs to animate + display the result,
-// but none of the probability logic that produced it.
-function resolveSpin(bet) {
+//
+// `carryMultiplier` is the multiplier trail accumulated so far during a
+// free-spin bonus round (0 for ordinary paid spins). Any orb multipliers
+// won this spin are ADDED on top of that carry-in and returned as
+// `carryMultiplier` in the result, so the caller can persist it forward
+// to the next free spin — mirroring how real scatter-slot bonus rounds
+// build up one big multiplier across the whole round instead of
+// resetting it every spin.
+function resolveSpin(bet, carryMultiplier) {
+  carryMultiplier = Number.isFinite(carryMultiplier) ? carryMultiplier : 0;
+
   let totalWin = 0;
-  let totalMult = 1;
+  let spinOrbTotal = 0;
   const rounds = [];
 
   // ---- Scatter count for this spin ----
-  // This drives both the free-spin trigger AND the near-miss tension effect
-  // on the client (3 scatters = "so close", 4+ = trigger).
   let scatterCount;
   const scatterRoll = Math.random();
   if (scatterRoll < WIN_RATE * 0.12) {
     scatterCount = Math.random() < 0.5 ? 4 : 5; // triggers free spins
   } else if (scatterRoll < WIN_RATE * 0.12 + 0.18) {
-    scatterCount = 3; // near miss — builds anticipation without paying out
+    scatterCount = 3; // near miss
   } else if (scatterRoll < WIN_RATE * 0.12 + 0.18 + 0.25) {
     scatterCount = 2;
   } else {
@@ -72,16 +76,16 @@ function resolveSpin(bet) {
 
     const clusterWin = bet * (clusterSize / 8) * 0.8;
     totalWin += clusterWin;
-    if (orbMult > 0) totalMult += orbMult;
+    if (orbMult > 0) spinOrbTotal += orbMult;
 
     rounds.push({ clusterSize, orbMult });
     roundNum++;
   }
 
+  const newCarryMultiplier = carryMultiplier + spinOrbTotal;
+  const totalMult = 1 + newCarryMultiplier;
   const finalWin = Math.round(totalWin * totalMult);
 
-  // Build the visual grid and place the scatter symbols in it so what the
-  // player sees actually matches scatterCount.
   const grid = randomGrid();
   const scatterIdxs = new Set();
   while (scatterIdxs.size < scatterCount) {
@@ -96,6 +100,7 @@ function resolveSpin(bet) {
     freeSpinsAwarded,
     rounds,
     multiplier: totalMult,
+    carryMultiplier: newCarryMultiplier,
     win: finalWin,
   };
 }

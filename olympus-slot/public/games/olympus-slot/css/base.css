@@ -643,3 +643,42 @@ h1 {
   transition: color 0.15s;
 }
 .lobby-back:hover { color: var(--gold-bright); }
+
+.player-row-single {
+  display: flex;
+  gap: 8px;
+}
+.player-row-single button {
+  flex: 1 1 auto;
+}
+.mute-btn {
+  flex: 0 0 auto !important;
+  width: 44px;
+  min-width: 44px;
+  font-size: 16px;
+}
+.mute-btn[aria-pressed="true"] {
+  border-color: var(--gold-deep);
+  background: var(--panel);
+  color: var(--text-faint);
+}
+.player-row-single { display: flex; gap: 8px; }
+.player-row-single button { flex: 1 1 auto; }
+.mute-btn { flex: 0 0 auto !important; width: 44px; min-width: 44px; font-size: 16px; }
+.mute-btn[aria-pressed="true"] { border-color: var(--gold-deep); background: var(--panel); color: var(--text-faint); }
+
+.bet-row input:disabled { opacity: 0.5; }
+.quickbtn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.bet-lock-hint {
+  display: none;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gold-bright);
+  background: rgba(212, 175, 55, 0.1);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  border-radius: 8px;
+  padding: 6px 8px;
+  margin: -4px 0 10px;
+}

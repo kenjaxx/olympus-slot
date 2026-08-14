@@ -8,20 +8,18 @@ app.use(express.static(path.join(__dirname, "..", "public")));
 
 // Very simple in-memory "database" — swap for a real DB (SQLite/Postgres)
 // if you want balances to survive a server restart.
-const players = {
-  // "mom": { balance: 1000, freeSpins: 0 },
-  // "dad": { balance: 1000, freeSpins: 0 },
-};
+const players = {};
 
-// The client bet is free-form, so the server still enforces a sane floor
-// and rejects garbage input — but there's no upper cap. Bigger bets pay out
-// on exactly the same ratio as small ones (see game.js — every payout is a
-// straight multiple of `bet`), so nothing about the odds changes with size.
 const MIN_BET = 10;
 
 function getPlayer(name) {
   if (!players[name]) {
-    players[name] = { balance: 1000, freeSpins: 0 };
+    players[name] = {
+      balance: 1000,
+      freeSpins: 0,
+      freeSpinBet: 0,        // bet locked in when the bonus was triggered
+      freeSpinMultiplier: 0, // multiplier trail accumulated across the bonus round
+    };
   }
   return players[name];
 }
@@ -35,17 +33,27 @@ app.get("/api/state/:player", (req, res) => {
 
 app.post("/api/spin", (req, res) => {
   const { player, bet } = req.body;
-  const numericBet = Math.round(Number(bet));
-
-  if (!player || !Number.isFinite(numericBet) || !Number.isSafeInteger(numericBet) || numericBet < MIN_BET) {
-    return res.status(400).json({ error: `player and a bet of at least ${MIN_BET} are required` });
+  if (!player) {
+    return res.status(400).json({ error: "player is required" });
   }
 
   const p = getPlayer(player);
   const usingFreeSpin = p.freeSpins > 0;
 
-  if (!usingFreeSpin && p.balance < numericBet) {
-    return res.status(400).json({ error: "insufficient balance" });
+  let numericBet;
+  if (usingFreeSpin) {
+    // Free spins ALWAYS use the bet that triggered the bonus round — the
+    // slider/quick-buttons have no effect here, exactly like a real
+    // scatter-slot bonus round.
+    numericBet = p.freeSpinBet || MIN_BET;
+  } else {
+    numericBet = Math.round(Number(bet));
+    if (!Number.isFinite(numericBet) || !Number.isSafeInteger(numericBet) || numericBet < MIN_BET) {
+      return res.status(400).json({ error: `player and a bet of at least ${MIN_BET} are required` });
+    }
+    if (p.balance < numericBet) {
+      return res.status(400).json({ error: "insufficient balance" });
+    }
   }
 
   if (usingFreeSpin) {
@@ -54,29 +62,58 @@ app.post("/api/spin", (req, res) => {
     p.balance -= numericBet;
   }
 
-  const result = game.resolveSpin(numericBet);
+  // Carry the accumulated bonus-round multiplier into this spin (0 for
+  // ordinary paid spins, since the trail only exists during free spins).
+  const carryIn = usingFreeSpin ? p.freeSpinMultiplier || 0 : 0;
+  const result = game.resolveSpin(numericBet, carryIn);
 
   if (result.freeSpinsAwarded) {
+    if (!usingFreeSpin) {
+      // A fresh bonus round just started on a paid spin — lock in the
+      // bet for every free spin that follows, and start the multiplier
+      // trail at zero.
+      p.freeSpinBet = numericBet;
+      p.freeSpinMultiplier = 0;
+    }
+    // If this happens WHILE already in free spins, it's a retrigger —
+    // more spins are added and the multiplier trail keeps building.
     p.freeSpins += result.freeSpinsAwarded;
   }
+
+  if (usingFreeSpin) {
+    p.freeSpinMultiplier = result.carryMultiplier;
+  }
+
   p.balance += result.win;
+
+  if (p.freeSpins === 0) {
+    // Bonus round fully finished — clear the trail and the locked bet
+    // so the next trigger starts fresh.
+    p.freeSpinMultiplier = 0;
+    p.freeSpinBet = 0;
+  }
 
   res.json({
     ...result,
     balance: p.balance,
     freeSpins: p.freeSpins,
+    usingFreeSpin,
+    betUsed: numericBet,
   });
 });
 
 // Reset a player's balance back to the starting amount (handy for testing/demoing)
 app.post("/api/reset/:player", (req, res) => {
-  players[req.params.player] = { balance: 1000, freeSpins: 0 };
+  players[req.params.player] = {
+    balance: 1000,
+    freeSpins: 0,
+    freeSpinBet: 0,
+    freeSpinMultiplier: 0,
+  };
   res.json(players[req.params.player]);
 });
 
 // ---- Admin-only endpoints ----
-// Protect these with a real password/auth before deploying anywhere public.
-// For now, a shared secret header is enough for local/personal use.
 const ADMIN_KEY = process.env.ADMIN_KEY || "changeme";
 
 app.get("/api/admin/winrate", (req, res) => {

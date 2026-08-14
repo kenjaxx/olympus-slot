@@ -1,10 +1,14 @@
 // main.js
 // Ties the other modules together: loads player state, wires the Spin
-// button, and provides the single spinOnce() routine that both the manual
-// Spin button and AutoSpin call.
+// and mute buttons, starts background music on first interaction, and
+// runs spins.
 //
-// Player switching / reset / mute UI has been removed — this always plays
-// as a single fixed "guest" session.
+// spinOnce() plays one requested spin — but if that spin triggers (or is
+// already inside) a free-spins bonus round, it automatically keeps
+// playing every remaining free spin on its own, using the bet locked in
+// by the server at trigger time, with the bet controls disabled for the
+// whole round. This mirrors how real scatter-slot bonus rounds auto-play
+// to completion instead of requiring a click per spin.
 
 (function () {
   const betEl = document.getElementById("bet");
@@ -13,17 +17,31 @@
   const fsCount = document.getElementById("fscount");
   const msgEl = document.getElementById("msg");
   const spinBtn = document.getElementById("spinbtn");
+  const autospinBtn = document.getElementById("autospinBtn");
   const loadAmountEl = document.getElementById("loadAmount");
   const topupBtn = document.getElementById("topupBtn");
   const winBanner = document.getElementById("winBanner");
   const netLineEl = document.getElementById("netLine");
+  const muteBtn = document.getElementById("muteBtn");
 
   const currentPlayer = "guest";
 
   // Tracks an in-progress free-spins bonus round so we can total up every
-  // win across it and show one big payoff screen at the end. Null when
-  // we're not currently inside a bonus round.
+  // win across it and show one big payoff screen at the end.
   let freeSpinSession = null;
+
+  function initAudioOnce() {
+    Sound.startBackgroundMusic();
+    document.removeEventListener("pointerdown", initAudioOnce);
+  }
+  document.addEventListener("pointerdown", initAudioOnce, { once: true });
+
+   muteBtn.addEventListener("click", () => {
+    const next = !Sound.isMuted();
+    Sound.setMuted(next);
+    muteBtn.textContent = next ? "🔕" : "🎵";
+    muteBtn.setAttribute("aria-pressed", String(next));
+  });
 
   async function loadPlayer() {
     try {
@@ -42,7 +60,6 @@
     }
   }
 
-  // Adds a player-chosen amount to the current player's balance.
   topupBtn.addEventListener("click", async () => {
     const amount = Math.round(Number(loadAmountEl.value));
     if (!Number.isFinite(amount) || amount <= 0) {
@@ -69,14 +86,18 @@
     }
   });
 
-  // Runs exactly one spin end-to-end: request -> animate -> update state.
-  // Returns { ok, insufficientFunds } so AutoSpin knows whether to continue.
-  // Wrapped in try/catch/finally so the spin button and autospin can never
-  // get stuck disabled, no matter what goes wrong mid-animation.
-  async function spinOnce() {
+  // Locks bet controls + the autospin Start button while a bonus round is
+  // auto-playing, so nothing can interfere with it mid-round.
+  function lockForBonus(locked) {
+    BetControls.setDisabled(locked);
+    if (autospinBtn) autospinBtn.disabled = locked;
+  }
+
+  // Runs exactly one spin request against the server + its animation.
+  // Returns the parsed result object, or null if the request failed
+  // (message already shown to the player).
+  async function performOneSpin() {
     const bet = BetControls.getBet();
-    spinBtn.disabled = true;
-    msgEl.textContent = "Spinning...";
     winBanner.classList.remove("show");
     netLineEl.textContent = "";
     netLineEl.classList.remove("positive", "negative");
@@ -91,47 +112,72 @@
       if (!res.ok) {
         const err = await res.json();
         msgEl.textContent = err.error || "Something went wrong";
-        return { ok: false, insufficientFunds: true };
+        return null;
       }
       result = await res.json();
     } catch (e) {
       console.error("spin request error:", e);
       msgEl.textContent = "Could not reach server";
-      return { ok: false, insufficientFunds: false };
-    } finally {
-      // Only re-enable here if we're bailing out before the animation step.
-      if (!result) spinBtn.disabled = false;
+      return null;
     }
 
     try {
-      // Open (or continue) a free-spins bonus session and fold this spin's
-      // win into the running total.
-      if (result.scatterTriggered && !freeSpinSession) {
+      if (result.freeSpinsAwarded && !freeSpinSession) {
         freeSpinSession = { totalWin: 0 };
+        lockForBonus(true);
       }
       if (freeSpinSession) {
         freeSpinSession.totalWin += result.win;
       }
 
-      await Reels.runFullSequence(result, bet);
+      // Use the bet the server actually charged (result.betUsed) rather
+      // than the slider's current value — during free spins these can
+      // differ, since the slider is ignored server-side.
+      await Reels.runFullSequence(result, result.betUsed);
 
-      // Bonus round just ran out of free spins — show the big totalizer.
       if (freeSpinSession && result.freeSpins === 0) {
         const total = freeSpinSession.totalWin;
         freeSpinSession = null;
+        lockForBonus(false);
         await Reels.showFreeSpinTotal(total);
       }
     } catch (err) {
-      console.error("spinOnce animation error:", err);
-    } finally {
-      spinBtn.disabled = false;
+      console.error("spin animation error:", err);
+      if (freeSpinSession) {
+        freeSpinSession = null;
+        lockForBonus(false);
+      }
     }
 
+    return result;
+  }
+
+  // Public entry point used by the Spin button and AutoSpin. Plays the
+  // requested spin, then — if it triggered or continued a free-spins
+  // bonus — automatically keeps spinning at the locked bet until the
+  // whole bonus round is finished before returning.
+  async function spinOnce() {
+    spinBtn.disabled = true;
+    msgEl.textContent = "Spinning...";
+
+    let result = await performOneSpin();
+    if (!result) {
+      spinBtn.disabled = false;
+      return { ok: false, insufficientFunds: true };
+    }
+
+    while (result.freeSpins > 0) {
+      await new Promise((resolve) => setTimeout(resolve, 550));
+      result = await performOneSpin();
+      if (!result) break;
+    }
+
+    spinBtn.disabled = false;
     return { ok: true, insufficientFunds: false };
   }
 
   spinBtn.addEventListener("click", () => {
-    if (AutoSpin.isRunning()) return; // manual spin disabled mid-autospin
+    if (AutoSpin.isRunning()) return;
     spinOnce();
   });
 
