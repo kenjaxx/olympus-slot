@@ -77,8 +77,28 @@ body {
   gap: 14px;
   margin-bottom: 0.6rem;
 }
-.sprig { color: var(--gold-deep); flex: 0 0 auto; opacity: 0.85; }
-.sprig-right { transform: scaleX(-1); }
+/* Slow idle sway on the header sprigs — a subtle "breathing" motion so the
+   header doesn't feel static while waiting for the next spin. Mirrored
+   left/right so they don't sway in lockstep. */
+.sprig {
+  color: var(--gold-deep);
+  flex: 0 0 auto;
+  opacity: 0.85;
+  transform-origin: 50% 100%;
+  animation: sprigSway 5.5s ease-in-out infinite;
+}
+.sprig-right { transform: scaleX(-1); animation-name: sprigSwayRight; animation-delay: 0.4s; }
+@keyframes sprigSway {
+  0%, 100% { transform: rotate(-2.5deg); }
+  50% { transform: rotate(2.5deg); }
+}
+@keyframes sprigSwayRight {
+  0%, 100% { transform: scaleX(-1) rotate(-2.5deg); }
+  50% { transform: scaleX(-1) rotate(2.5deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sprig { animation: none; }
+}
 .temple-title { text-align: center; }
 
 h1 {
@@ -164,6 +184,38 @@ h1 {
   flex: 1 1 auto;
 }
 
+/* ---- "Add funds" row — pulled into the same gilded-button language as
+   the bet quick-buttons/spin button instead of a plain default input, so
+   it doesn't read as a leftover dev/debug control. ---- */
+.player-row:has(#loadAmount) {
+  background: var(--panel);
+  border: 1px solid var(--panel-line);
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+.player-row:has(#loadAmount) label {
+  font-weight: 600;
+  color: var(--text-dim);
+}
+#loadAmount {
+  font-family: var(--font-mono);
+  color: var(--gold-bright);
+  background: var(--ink);
+  border: 1px solid var(--panel-line);
+}
+#loadAmount:focus {
+  outline: none;
+  border-color: var(--gold-deep);
+}
+#topupBtn {
+  background: linear-gradient(180deg, var(--gold-bright), var(--gold) 55%, var(--gold-deep));
+  color: #3a2a0a;
+  border: 1px solid var(--gold-deep);
+  font-family: var(--font-display);
+  letter-spacing: 0.5px;
+}
+#topupBtn:hover { filter: brightness(1.06); background: linear-gradient(180deg, var(--gold-bright), var(--gold) 55%, var(--gold-deep)); }
+
 .settings-row {
   display: flex;
   align-items: center;
@@ -242,7 +294,7 @@ h1 {
 .msg { text-align: center; font-size: 13px; color: var(--text-dim); min-height: 18px; margin: 0 0 1rem; }
 
 /* ---- Bet controls ---- */
-.bet-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.bet-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; position: relative; }
 .bet-row label { font-size: 13px; color: var(--text-dim); white-space: nowrap; }
 .bet-row input[type="range"] {
   flex: 1;
@@ -260,6 +312,34 @@ h1 {
   font-family: var(--font-mono);
   font-size: 13px;
   font-weight: 600;
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+
+/* Shown when the typed/quick-button bet exceeds the slider's fixed
+   comfortable ceiling — otherwise the handle just silently pins at the
+   end and the "why won't the slider move" moment has no explanation. */
+.bet-row.bet-overflow input[type="number"] {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.35);
+}
+.bet-row.bet-overflow input[type="range"] { accent-color: var(--gold-bright); }
+.bet-overflow-hint {
+  position: absolute;
+  right: 78px;
+  top: -18px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  color: var(--gold-bright);
+  opacity: 0;
+  transform: translateY(2px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.bet-row.bet-overflow .bet-overflow-hint {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .bet-quick-row { display: flex; gap: 8px; margin-bottom: 1rem; }
@@ -418,7 +498,17 @@ h1 {
   border: 1px solid var(--gold-deep);
   border-radius: 14px;
   padding: 1.1rem 1.2rem 1.3rem;
-  box-shadow: 0 24px 60px -20px rgba(0,0,0,0.7);
+  box-shadow: 0 24px 60px -20px rgba(0,0,0,0.7), 0 0 0 1px rgba(212,175,55,0.15);
+  position: relative;
+}
+/* Thin gold-foil top edge on the sheet, echoing the card tiles' foil border */
+.paytable-sheet::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 14px; right: 14px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold-bright), transparent);
+  opacity: 0.7;
 }
 
 .paytable-head {
@@ -445,15 +535,33 @@ h1 {
 .paytable-close:hover { color: var(--text); }
 
 .paytable-list { list-style: none; margin: 0 0 0.9rem; padding: 0; }
+
+/* Each row now reads as a small gilded card rather than a flat list line,
+   and rows stagger in on open (delay set inline per-row by paytable.js)
+   instead of all appearing at once. */
 .paytable-row {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 7px 4px;
-  border-bottom: 1px solid var(--panel-line);
+  padding: 8px 10px;
+  margin-bottom: 6px;
+  border-radius: 8px;
+  background: linear-gradient(160deg, rgba(212,175,55,0.08), rgba(212,175,55,0.02));
+  border: 1px solid rgba(212, 175, 55, 0.18);
+  opacity: 0;
+  transform: translateY(6px);
+  animation: paytableRowIn 0.32s ease forwards;
+  animation-delay: var(--row-delay, 0s);
 }
-.paytable-row:last-child { border-bottom: none; }
-.paytable-icon { width: 24px; height: 24px; flex: 0 0 auto; display: block; }
+.paytable-row:last-child { margin-bottom: 0; }
+@keyframes paytableRowIn {
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .paytable-row { animation: none; opacity: 1; transform: none; }
+}
+
+.paytable-icon { width: 26px; height: 26px; flex: 0 0 auto; display: block; }
 .paytable-icon svg { width: 100%; height: 100%; display: block; }
 .paytable-label {
   flex: 1;
@@ -464,6 +572,9 @@ h1 {
   font-family: var(--font-mono);
   font-size: 11px;
   color: var(--text-faint);
+  background: rgba(0,0,0,0.2);
+  padding: 2px 6px;
+  border-radius: 5px;
 }
 
 .paytable-rules {
@@ -509,7 +620,12 @@ h1 {
   .fs-total-amount { font-size: 32px; }
 }
 
+/* Small phones (iPhone SE class, ~320-340px): the stats row wraps to a
+   3-up grid — give each block a touch more breathing room and shrink the
+   value font a little further so nothing clips against its neighbor. */
 @media (max-width: 340px) {
-  .stats-row { flex-wrap: wrap; row-gap: 6px; }
-  .stats-row > div { flex: 1 1 30%; }
+  .stats-row { flex-wrap: wrap; row-gap: 10px; column-gap: 4px; }
+  .stats-row > div { flex: 1 1 30%; min-width: 0; }
+  .stats-row .value { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .stats-row .label { font-size: 9px; }
 }

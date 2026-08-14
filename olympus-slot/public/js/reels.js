@@ -69,7 +69,10 @@
     }
   }
 
-  // Full cascading reel-drop animation.
+  // Full cascading reel-drop animation. Each column strip gets a quick
+  // overshoot-and-settle bounce right as it lands (in addition to the
+  // existing brightness flash), so the stop reads as having real weight
+  // instead of just snapping to a dead stop.
   function animateReelDrop(finalValues) {
     return new Promise((resolve) => {
       reelsEl.innerHTML = "";
@@ -114,6 +117,13 @@
           Sound.playReelStopTick(c);
           viewport.classList.add("landed");
           setTimeout(() => viewport.classList.remove("landed"), 220);
+
+          // Settle bounce: apply on the still-live strip (its transform is
+          // "translateY(0px)" at this point), then let it fall away —
+          // buildStaticGrid() below swaps the DOM shortly after anyway.
+          strip.style.transition = "none";
+          void strip.offsetWidth;
+          strip.classList.add("reel-strip-settle");
         }, stopTime);
       }
 
@@ -322,7 +332,12 @@
       Sound.playSuspenseBuildup(duration);
       await wait(duration);
     } finally {
-      reelsWrapEl.classList.remove("suspense");
+      // Handoff to the win banner: briefly crossfade the vignette out
+      // rather than yanking the "suspense" class off in the same tick the
+      // banner appears, so the two states blend instead of hard-cutting.
+      reelsWrapEl.classList.add("fading-out");
+      await wait(220);
+      reelsWrapEl.classList.remove("suspense", "fading-out");
     }
   }
 
@@ -342,6 +357,7 @@
       const count = freeSpinsAwarded || 10;
       if (countEl) countEl.textContent = count;
 
+      overlay.classList.remove("closing");
       overlay.classList.add("show");
       Sound.playBellRing(count);
       spawnCoinShower(28);
@@ -350,9 +366,14 @@
       function close() {
         if (done) return;
         done = true;
-        overlay.classList.remove("show");
         continueBtn.removeEventListener("click", close);
-        resolve();
+        // Play the scale-out/fade before actually hiding, so the overlay
+        // doesn't just vanish on opacity alone.
+        overlay.classList.add("closing");
+        setTimeout(() => {
+          overlay.classList.remove("show", "closing");
+          resolve();
+        }, 200);
       }
       continueBtn.addEventListener("click", close);
       setTimeout(close, 4500);
@@ -465,6 +486,7 @@
       }
 
       amountEl.textContent = "0";
+      overlay.classList.remove("closing");
       overlay.classList.add("show");
       Sound.playFreeSpinTotalFanfare();
 
@@ -474,9 +496,12 @@
       function close() {
         if (done) return;
         done = true;
-        overlay.classList.remove("show");
         continueBtn.removeEventListener("click", close);
-        resolve();
+        overlay.classList.add("closing");
+        setTimeout(() => {
+          overlay.classList.remove("show", "closing");
+          resolve();
+        }, 200);
       }
       continueBtn.addEventListener("click", close);
       // Auto-advances so autospin never gets stuck waiting on a click.

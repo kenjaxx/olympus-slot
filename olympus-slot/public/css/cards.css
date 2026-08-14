@@ -1,5 +1,8 @@
 .reels-wrap { position: relative; margin-bottom: 1rem; }
 
+/* ---- Reel frame: layered bezel for a "cabinet" feel instead of a flat
+   dark box — an outer bronze rim, an inner dark well, and a soft top
+   highlight so the frame reads as having real depth. ---- */
 .reels {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
@@ -9,7 +12,12 @@
   padding: 10px;
   height: 240px;
   border: 1px solid var(--panel-line);
-  box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.6),
+    0 0 0 3px var(--gold-deep),
+    0 0 0 4px rgba(212, 175, 55, 0.25),
+    inset 0 3px 12px rgba(0, 0, 0, 0.65),
+    inset 0 -2px 6px rgba(212, 175, 55, 0.08);
 }
 
 /* ---- Card tile: parchment with a thin gold foil edge ---- */
@@ -33,13 +41,32 @@
   justify-content: center;
 }
 
-/* ---- Mythology symbol card (grape / kylix / amphora / krater / gem / crown) ---- */
+/* ---- Mythology symbol card (grape / kylix / amphora / krater / gem / crown) ----
+   Each tier now tints the whole tile with a faint wash of its accent color
+   (not just the icon), so tiers read as visually distinct at a glance
+   instead of only differing in a small line-art icon + label. */
 .pcard-symbol {
   flex-direction: column;
   gap: 2px;
   color: var(--tier-accent, var(--aegean));
+  width: 100%;
+  height: 100%;
+  background:
+    radial-gradient(ellipse 90% 90% at 50% 20%, color-mix(in srgb, var(--tier-accent, var(--aegean)) 16%, transparent), transparent 70%),
+    linear-gradient(160deg, var(--parchment), #e6dcbd);
 }
 .pcard-icon svg { display: block; width: 26px; height: 26px; }
+
+/* Two-tone icon treatment: a dark hairline behind the accent stroke so
+   thin single-line art stays legible at small mobile sizes instead of
+   thinning out into near-invisibility. */
+.pcard-icon {
+  position: relative;
+}
+.pcard-icon svg {
+  filter: drop-shadow(0 0.5px 0 rgba(74, 60, 38, 0.55)) drop-shadow(0.5px 0 0 rgba(74, 60, 38, 0.55));
+}
+
 .pcard-name {
   font-family: var(--font-body);
   font-size: 7px;
@@ -51,18 +78,25 @@
 }
 
 /* Higher tiers get a bit more presence — bigger icon, a soft glow ring,
-   and (top tier) a gilded card background instead of plain parchment. */
+   and (top tiers) a richer gilded tile background instead of plain
+   parchment-with-a-tint. */
 .pcard-tier4 .pcard-icon svg,
 .pcard-tier5 .pcard-icon svg,
 .pcard-tier6 .pcard-icon svg { width: 29px; height: 29px; }
 
-.pcard-tier5 { filter: drop-shadow(0 0 3px rgba(194,59,59,0.35)); }
+.pcard-tier3 { background: linear-gradient(160deg, color-mix(in srgb, var(--tier-accent) 22%, var(--parchment)), #e6dcbd); }
+.pcard-tier4 { background: linear-gradient(160deg, color-mix(in srgb, var(--tier-accent) 26%, var(--parchment)), #e2d5b0); }
+.pcard-tier5 {
+  background: linear-gradient(160deg, color-mix(in srgb, var(--tier-accent) 30%, var(--parchment)), #e2d0b0);
+  filter: drop-shadow(0 0 3px rgba(194,59,59,0.35));
+}
 .pcard-tier6 {
   filter: drop-shadow(0 0 5px rgba(212,175,55,0.55));
 }
 .card-face-wrap.card-face-wrap:has(.pcard-tier6) {
   background: linear-gradient(160deg, var(--gold-bright), var(--gold) 70%, var(--gold-deep));
 }
+.card-face-wrap.card-face-wrap:has(.pcard-tier6) .pcard-symbol { background: none; }
 
 /* ---- Scatter (coin) card ---- */
 .pcard-scatter {

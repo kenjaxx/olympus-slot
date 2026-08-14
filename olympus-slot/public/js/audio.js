@@ -9,6 +9,10 @@
 // instant "Big win!" fired right after it). Now the currently-playing line
 // always finishes; only the next *pending* line gets replaced, so during a
 // fast autospin session the queue never backs up into a long ramble either.
+//
+// A light haptics layer (vibrate()) rides on the same mute toggle as sound,
+// so muting silences buzzes too, and no-ops cleanly wherever the Vibration
+// API isn't available (desktop, iOS Safari, etc).
 
 (function () {
   let audioCtx = null;
@@ -54,6 +58,20 @@
     gain.connect(ctx.destination);
     osc.start(ctx.currentTime + delay);
     osc.stop(ctx.currentTime + delay + duration + 0.02);
+  }
+
+  // Light haptic buzz for mobile — piggybacks on the same mute toggle as
+  // sound, so muting the game silences vibration too. Silently no-ops on
+  // desktop or any browser without the Vibration API, and never lets a
+  // haptics failure interrupt gameplay.
+  function vibrate(pattern) {
+    if (muted) return;
+    if (!("vibrate" in navigator)) return;
+    try {
+      navigator.vibrate(pattern);
+    } catch (err) {
+      // Some browsers throw if called outside a user-gesture context.
+    }
   }
 
   function pickBestVoice(voices) {
@@ -140,11 +158,13 @@
 
   function playReelStopTick(index) {
     playTone({ freq: 300 + index * 20, duration: 0.08, type: "square", volume: 0.08 });
+    vibrate(8);
   }
 
   function playTumbleHit(comboIndex) {
     const base = 440 + comboIndex * 60;
     playTone({ freq: base, duration: 0.18, type: "triangle", volume: 0.14, glideTo: base * 1.3 });
+    vibrate(15);
   }
 
   function playMultiplierHit(orbValue, runningTotal) {
@@ -158,16 +178,19 @@
         delay: s * 0.05,
       });
     }
+    vibrate([10, 30, 10, 30]);
     setTimeout(() => speak(runningTotal + " times!"), steps * 50 + 80);
   }
 
   function playScatterTease() {
     playTone({ freq: 220, duration: 0.5, type: "sawtooth", volume: 0.08, glideTo: 340 });
+    vibrate(25);
   }
 
   function playScatterTrigger() {
     const notes = [523, 659, 784, 1046, 1318];
     notes.forEach((f, i) => playTone({ freq: f, duration: 0.28, type: "sine", volume: 0.16, delay: i * 0.09 }));
+    vibrate([20, 40, 20, 40, 60]);
   }
 
   // Bright, ringing bell-like chord used when the free-spins TRIGGER
@@ -179,17 +202,20 @@
       playTone({ freq: f, duration: 0.9, type: "sine", volume: 0.14, delay: i * 0.1, glideTo: f * 0.985 });
       playTone({ freq: f * 2, duration: 0.5, type: "sine", volume: 0.05, delay: i * 0.1 });
     });
+    vibrate([30, 60, 30, 60, 30, 100]);
     const count = Number.isFinite(freeSpinsAwarded) ? freeSpinsAwarded : 10;
     setTimeout(() => speak(`Free spins! You have ${count} free spins!`), 350);
   }
 
   function playWinChime() {
     [660, 880].forEach((f, i) => playTone({ freq: f, duration: 0.2, type: "sine", volume: 0.15, delay: i * 0.07 }));
+    vibrate(20);
   }
 
   function playBigWinFanfare() {
     const notes = [523, 659, 784, 1046];
     notes.forEach((f, i) => playTone({ freq: f, duration: 0.3, type: "sawtooth", volume: 0.12, delay: i * 0.12 }));
+    vibrate([40, 60, 40, 60, 80]);
     setTimeout(() => speak("Big win!"), 250);
   }
 
@@ -225,6 +251,7 @@
   function playFreeSpinTotalFanfare() {
     const notes = [392, 523, 659, 784, 988, 1175];
     notes.forEach((f, i) => playTone({ freq: f, duration: 0.35, type: "sawtooth", volume: 0.13, delay: i * 0.15 }));
+    vibrate([30, 50, 30, 50, 30, 50]);
     setTimeout(() => speak("Total win!"), notes.length * 150 + 350);
   }
 
@@ -243,6 +270,7 @@
 
   window.Sound = {
     speak,
+    vibrate,
     playReelStopTick,
     playTumbleHit,
     playMultiplierHit,

@@ -49,7 +49,9 @@
   100% { transform: translate(var(--dx), var(--dy)) scale(0.25); opacity: 0; }
 }
 
-/* Reel viewport gets a quick bright flash the instant it lands */
+/* Reel viewport gets a quick bright flash the instant it lands, plus a
+   tiny overshoot-and-settle bounce on the strip itself so the stop reads
+   as having weight rather than just snapping still. */
 .reels-wrap .landed,
 .reels.landed {
   animation: reelLandFlash 0.22s ease-out;
@@ -57,6 +59,16 @@
 @keyframes reelLandFlash {
   0%   { filter: brightness(1.7); }
   100% { filter: brightness(1); }
+}
+
+.reel-strip-settle {
+  animation: reelSettleBounce 0.32s cubic-bezier(0.36, 0, 0.66, 1);
+}
+@keyframes reelSettleBounce {
+  0%   { transform: translateY(0); }
+  35%  { transform: translateY(6px); }
+  65%  { transform: translateY(-2px); }
+  100% { transform: translateY(0); }
 }
 
 /* Expanding shockwave ring for big wins */
@@ -118,7 +130,7 @@
   opacity: 0;
   pointer-events: none;
   transform: scale(0.7);
-  transition: opacity 0.2s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
   overflow: hidden;
 }
 .win-banner.show { opacity: 1; transform: scale(1); }
@@ -219,7 +231,9 @@
   100% { transform: translateY(0) scale(1); opacity: 1; }
 }
 
-/* ---- Pre-win suspense beat ---- */
+/* ---- Pre-win suspense beat ----
+   .fading-out plays a quick brighten+settle as the vignette hands off to
+   the win banner, so the two states crossfade instead of hard-cutting. */
 .reels-wrap.suspense .reels {
   animation: suspensePulse 0.5s ease-in-out infinite alternate;
   filter: brightness(0.5) saturate(1.35);
@@ -237,10 +251,20 @@
   pointer-events: none;
   z-index: 3;
   animation: suspenseVignette 0.5s ease-in-out infinite alternate;
+  transition: opacity 0.3s ease;
 }
 @keyframes suspenseVignette {
   from { opacity: 0.7; }
   to   { opacity: 1; }
+}
+.reels-wrap.suspense.fading-out::after {
+  animation: none;
+  opacity: 0;
+}
+.reels-wrap.suspense.fading-out .reels {
+  animation: none;
+  filter: brightness(1) saturate(1);
+  transition: filter 0.3s ease;
 }
 
 /* ---- Multiplier hit: a "+Nx" label flies from the winning tile to the
@@ -284,6 +308,17 @@
   padding: 1rem;
 }
 .fs-total-overlay.show { opacity: 1; pointer-events: auto; }
+
+/* Closing state: card scales back down and fades, mirroring the pop-in,
+   instead of the overlay just vanishing on opacity:0. Toggled briefly by
+   JS right before the .show class is removed. */
+.fs-total-overlay.closing .fs-total-card {
+  animation: fsCardPopOut 0.22s ease-in forwards;
+}
+@keyframes fsCardPopOut {
+  from { transform: scale(1); opacity: 1; }
+  to   { transform: scale(0.85); opacity: 0; }
+}
 
 .fs-total-card {
   text-align: center;
