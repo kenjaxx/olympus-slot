@@ -8,8 +8,28 @@ const ROWS = 4;
 const COLS = 5;
 
 // ---- THE CONTROL KNOB ----
-// 0.0 = never win, 1.0 = always win. Change this to tune how often the house pays out.
-let WIN_RATE = 0.45;
+// 0.0 = never win, 1.0 = always win.
+//
+// WIN_RATE now auto-adjusts after every spin instead of staying fixed:
+//   - A spin that pays out ZERO (a "cold" spin) bumps WIN_RATE up by
+//     RATE_STEP (2%), so a losing streak gradually gets "hotter" and a
+//     win becomes more likely the longer it's been since the last one.
+//   - The moment a spin actually pays out (win > 0), WIN_RATE snaps back
+//     down to RESET_WIN_RATE (20%).
+// It starts at START_WIN_RATE and stays clamped to [0, 1] throughout.
+//
+// The admin endpoints (/api/admin/winrate) can still set WIN_RATE by
+// hand at any time — the next spin's win/loss will simply keep
+// adjusting it from whatever value was set.
+//
+// NOTE: WIN_RATE is a single module-level value shared by every player
+// on the server (this was already true before) — it is not tracked
+// per-player.
+const START_WIN_RATE = 0.01;
+const RESET_WIN_RATE = 0.2;
+const RATE_STEP = 0.02;
+
+let WIN_RATE = START_WIN_RATE;
 
 function setWinRate(rate) {
   WIN_RATE = Math.max(0, Math.min(1, rate));
@@ -85,6 +105,13 @@ function resolveSpin(bet, carryMultiplier) {
   const newCarryMultiplier = carryMultiplier + spinOrbTotal;
   const totalMult = 1 + newCarryMultiplier;
   const finalWin = Math.round(totalWin * totalMult);
+
+  // ---- Auto-adjust WIN_RATE for the NEXT spin, based on this one ----
+  if (finalWin > 0) {
+    WIN_RATE = RESET_WIN_RATE;
+  } else {
+    WIN_RATE = Math.min(1, WIN_RATE + RATE_STEP);
+  }
 
   const grid = randomGrid();
   const scatterIdxs = new Set();

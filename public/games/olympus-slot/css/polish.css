@@ -1,0 +1,217 @@
+/* ---------------------------------------------------------------------
+   polish.css
+   A light beautification pass on top of base/cards/fx. Pure CSS — no
+   markup or JS changes required. Safe to remove this file and the single
+   <link> to it in index.html to revert.
+--------------------------------------------------------------------- */
+
+/* ---- Stat boxes: give Balance / Multiplier / Last win their own subtle
+   gilded card instead of sitting flat against the panel background ---- */
+.stats-row {
+  gap: 8px;
+}
+.stats-row > div {
+  flex: 1;
+  background: linear-gradient(160deg, rgba(212, 175, 55, 0.07), rgba(212, 175, 55, 0.01));
+  border: 1px solid rgba(212, 175, 55, 0.14);
+  border-radius: 10px;
+  padding: 8px 6px;
+  text-align: center;
+}
+.stats-row > div .label { margin-bottom: 2px; }
+.stats-row .value.accent,
+.stats-row .value.success,
+.stats-row .value { text-align: center; }
+
+/* ---- Net-line pops in when it appears, instead of just materializing ---- */
+.net-line.positive,
+.net-line.negative {
+  animation: netLinePop 0.32s ease;
+}
+@keyframes netLinePop {
+  from { transform: scale(0.9); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+
+/* ---- Main panel: thin gilded gradient ring instead of a flat solid
+   border, echoing the card-tile foil edges ---- */
+.card {
+  position: relative;
+}
+.card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 16px;
+  padding: 1px;
+  pointer-events: none;
+  background: linear-gradient(
+    135deg,
+    rgba(243, 217, 128, 0.55),
+    rgba(212, 175, 55, 0.05) 30%,
+    rgba(212, 175, 55, 0.05) 70%,
+    rgba(243, 217, 128, 0.35)
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+
+/* ---- Reel frame: soft gold-dust glow sitting just behind it ---- */
+.reels-wrap { z-index: 1; }
+.reels-wrap::before {
+  content: "";
+  position: absolute;
+  inset: -8px;
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at 15% 20%, rgba(212, 175, 55, 0.14), transparent 42%),
+    radial-gradient(circle at 85% 80%, rgba(212, 175, 55, 0.12), transparent 42%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* ---- Spin button: a light sweep of "shine" drifts across it while idle,
+   so the primary CTA has some life even before the player taps it ---- */
+.spin-btn {
+  position: relative;
+  overflow: hidden;
+}
+.spin-btn::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -60%;
+  width: 35%;
+  height: 100%;
+  background: linear-gradient(115deg, transparent, rgba(255, 255, 255, 0.65), transparent);
+  transform: skewX(-18deg);
+  animation: spinShine 3.4s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes spinShine {
+  0%   { left: -60%; }
+  38%  { left: 130%; }
+  100% { left: 130%; }
+}
+.spin-btn:disabled::after { display: none; }
+
+/* ---- Quick-bet buttons + paytable/mute buttons: soft gold glow on
+   hover/focus so the whole UI feels responsive to touch, not just Spin ---- */
+.quickbtn:hover,
+.quickbtn:focus-visible,
+#paytableBtn:hover,
+#paytableBtn:focus-visible,
+.mute-btn:hover,
+.mute-btn:focus-visible,
+.autospin-btn:hover,
+.autospin-btn:focus-visible {
+  box-shadow: 0 0 0 1px var(--gold-deep), 0 0 12px rgba(212, 175, 55, 0.35);
+}
+
+/* ---- Card tiles: gentle lift + glow on hover (pointer devices only —
+   irrelevant, and unwanted, on touch) ---- */
+@media (hover: hover) and (pointer: fine) {
+  .cell {
+    transition: transform 0.16s ease, box-shadow 0.16s ease;
+  }
+  .cell:hover {
+    transform: translateY(-2px) scale(1.035);
+    box-shadow: 0 8px 16px -8px rgba(212, 175, 55, 0.55);
+    z-index: 2;
+  }
+}
+
+/* ---- Free-spins / autospin badges: faint shimmer so they read as
+   "live" state rather than a static label ---- */
+.badge {
+  position: relative;
+  overflow: hidden;
+}
+.badge::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -40%;
+  width: 30%;
+  height: 100%;
+  background: linear-gradient(115deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+  transform: skewX(-18deg);
+  animation: badgeShimmer 4.5s ease-in-out infinite;
+}
+@keyframes badgeShimmer {
+  0%   { left: -40%; }
+  25%  { left: 130%; }
+  100% { left: 130%; }
+}
+
+/* ---- Header: a faint gold glow breathing behind the title ---- */
+.temple-title {
+  position: relative;
+}
+.temple-title::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 220px;
+  height: 90px;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(ellipse, rgba(212, 175, 55, 0.22), transparent 70%);
+  filter: blur(6px);
+  z-index: -1;
+  animation: titleGlow 4s ease-in-out infinite alternate;
+}
+@keyframes titleGlow {
+  from { opacity: 0.6; }
+  to   { opacity: 1; }
+}
+
+/* ---- Fixed "‹ Menu" button, pinned top-left of the viewport so it's
+   always reachable without scrolling back up through the game. ---- */
+.back-to-menu {
+  position: fixed;
+  top: calc(0.9rem + var(--safe-top));
+  left: 0.9rem;
+  z-index: 40;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 12px 7px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--panel-line);
+  background: rgba(26, 19, 48, 0.72);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  color: var(--text-dim);
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: 0 8px 20px -10px rgba(0, 0, 0, 0.6);
+  transition: border-color 0.15s, color 0.15s, box-shadow 0.15s, transform 0.1s;
+}
+.back-to-menu svg { flex: 0 0 auto; }
+.back-to-menu:hover {
+  border-color: var(--gold-deep);
+  color: var(--gold-bright);
+  box-shadow: 0 0 0 1px var(--gold-deep), 0 10px 22px -10px rgba(212, 175, 55, 0.35);
+}
+.back-to-menu:active { transform: translateY(1px); }
+
+@media (max-width: 480px) {
+  .back-to-menu {
+    top: calc(0.7rem + var(--safe-top));
+    left: 0.7rem;
+    padding: 6px 10px 6px 8px;
+    font-size: 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spin-btn::after,
+  .badge::after,
+  .temple-title::before {
+    animation: none;
+  }
+}
