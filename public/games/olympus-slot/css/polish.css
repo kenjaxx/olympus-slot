@@ -71,8 +71,8 @@
   z-index: -1;
 }
 
-/* ---- Spin button: a light sweep of "shine" drifts across it while idle,
-   so the primary CTA has some life even before the player taps it ---- */
+/* ---- Spin button: shine now animates `transform`, not `left` (left
+   forces layout on every frame; transform is compositor-only). ---- */
 .spin-btn {
   position: relative;
   overflow: hidden;
@@ -81,18 +81,19 @@
   content: "";
   position: absolute;
   top: 0;
-  left: -60%;
+  left: -35%;
   width: 35%;
   height: 100%;
   background: linear-gradient(115deg, transparent, rgba(255, 255, 255, 0.65), transparent);
-  transform: skewX(-18deg);
+  transform: translateX(0) skewX(-18deg);
+  will-change: transform;
   animation: spinShine 3.4s ease-in-out infinite;
   pointer-events: none;
 }
 @keyframes spinShine {
-  0%   { left: -60%; }
-  38%  { left: 130%; }
-  100% { left: 130%; }
+  0%   { transform: translateX(0) skewX(-18deg); }
+  38%  { transform: translateX(543%) skewX(-18deg); }
+  100% { transform: translateX(543%) skewX(-18deg); }
 }
 .spin-btn:disabled::after { display: none; }
 
@@ -122,8 +123,7 @@
   }
 }
 
-/* ---- Free-spins / autospin badges: faint shimmer so they read as
-   "live" state rather than a static label ---- */
+/* ---- Free-spins / autospin badges: shimmer via transform, not `left` ---- */
 .badge {
   position: relative;
   overflow: hidden;
@@ -136,13 +136,14 @@
   width: 30%;
   height: 100%;
   background: linear-gradient(115deg, transparent, rgba(255, 255, 255, 0.35), transparent);
-  transform: skewX(-18deg);
+  transform: translateX(0) skewX(-18deg);
+  will-change: transform;
   animation: badgeShimmer 4.5s ease-in-out infinite;
 }
 @keyframes badgeShimmer {
-  0%   { left: -40%; }
-  25%  { left: 130%; }
-  100% { left: 130%; }
+  0%   { transform: translateX(0) skewX(-18deg); }
+  25%  { transform: translateX(567%) skewX(-18deg); }
+  100% { transform: translateX(567%) skewX(-18deg); }
 }
 
 /* ---- Header: a faint gold glow breathing behind the title ---- */

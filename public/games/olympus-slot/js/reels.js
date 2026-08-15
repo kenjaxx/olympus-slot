@@ -134,7 +134,7 @@
     });
   }
 
-  function spawnSparks(cellEl, count) {
+  function spawnSparks(cellEl, count, color) {
     const wrapRect = reelsWrapEl.getBoundingClientRect();
     const cellRect = cellEl.getBoundingClientRect();
     const cx = cellRect.left - wrapRect.left + cellRect.width / 2;
@@ -149,9 +149,34 @@
       spark.style.top = cy + "px";
       spark.style.setProperty("--dx", Math.cos(angle) * dist + "px");
       spark.style.setProperty("--dy", Math.sin(angle) * dist + "px");
+      if (color) spark.style.setProperty("--spark-color", color);
       reelsWrapEl.appendChild(spark);
       setTimeout(() => spark.remove(), 550);
     }
+  }
+
+  // Colored ring that snaps onto a hit tile and expands outward.
+  function spawnHitRing(cellEl, color) {
+    const ring = document.createElement("div");
+    ring.className = "hit-ring";
+    ring.style.setProperty("--ring-color", color || "var(--gold-bright)");
+    cellEl.appendChild(ring);
+    setTimeout(() => ring.remove(), 520);
+  }
+
+  // Quick light streak across a hit tile.
+  function spawnHitGlint(cellEl) {
+    const glint = document.createElement("div");
+    glint.className = "hit-glint";
+    cellEl.appendChild(glint);
+    setTimeout(() => glint.remove(), 520);
+  }
+
+  // Looks up a symbol's tier accent color from CardArt's metadata, with
+  // a gold fallback for scatter/wild/unknown keys.
+  function accentForSymbol(sym) {
+    const meta = CardArt.SYMBOL_META[sym];
+    return meta ? meta.accent : "#f3d980";
   }
 
   function spawnShockwave() {
@@ -262,6 +287,12 @@
   // If this round carries a multiplier orb, one flashed cell becomes an orb
   // card — returns that cell's index (or -1) so the caller can animate the
   // multiplier flying from that exact tile.
+  // Flashes a random subset of NON-scatter cells to represent a tumble hit.
+  // Each hit tile now gets a color-matched ring burst + glint + sparks
+  // (matched to that symbol's tier), so higher-tier hits visually pop more
+  // than a grape/kylix hit. If this round carries a multiplier orb, one
+  // flashed cell becomes an orb card — returns that cell's index (or -1)
+  // so the caller can animate the multiplier flying from that exact tile.
   async function flashHitCells(count, comboIndex, orbMult) {
     let orbCellIdx = -1;
     try {
@@ -277,14 +308,18 @@
       const idxList = [...idxs];
 
       idxList.forEach((i) => {
+        const color = accentForSymbol(cellSymbols[i]);
         cells[i].classList.add("hit");
-        spawnSparks(cells[i], 5);
+        spawnSparks(cells[i], 5, color);
+        spawnHitRing(cells[i], color);
+        spawnHitGlint(cells[i]);
       });
 
       if (orbMult > 0 && idxList.length > 0) {
         const orbIdx = idxList[Math.floor(Math.random() * idxList.length)];
         cells[orbIdx].innerHTML = CardArt.cardFor("orb").html;
-        spawnSparks(cells[orbIdx], 8);
+        spawnSparks(cells[orbIdx], 8, "#ffd166");
+        spawnHitRing(cells[orbIdx], "#ffd166");
         orbCellIdx = orbIdx;
       }
 

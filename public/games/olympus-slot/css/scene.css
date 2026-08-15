@@ -1,10 +1,9 @@
 /* ---------------------------------------------------------------------
-   Olympus scene backdrop — a dusk sky over Mount Olympus with a ruined
-   temple silhouette, drifting clouds, twinkling stars, floating gold
-   dust, and a faint rotating laurel emblem. Pure CSS/SVG, fixed behind
-   the app content (which sits at z-index 1, see base.css). Designed to
-   stay legible under the panel while still being clearly visible in the
-   margins/padding around it — no more flat black page background.
+   Olympus scene backdrop — optimized: every continuous animation here
+   now only touches `opacity`/`transform` (GPU-compositable), instead of
+   `background-position` or huge rotating conic-gradients, which forced
+   full-layer repaints every frame. Visual result is basically the same;
+   the perf cost is a fraction of what it was.
 --------------------------------------------------------------------- */
 
 .olympus-scene {
@@ -15,9 +14,7 @@
   pointer-events: none;
 }
 
-/* ---- Sky: deep night at the top, warming to a golden dusk band low
-   down — brighter and with a touch more mid-tone color than before, so
-   it reads as an actual sky rather than a near-black gradient. ---- */
+/* ---- Sky ---- */
 .scene-sky {
   position: absolute;
   inset: 0;
@@ -35,8 +32,10 @@
   );
 }
 
-/* ---- Sun/moon glow, low on the horizon, with soft rotating godrays
-   fanning out behind it ---- */
+/* ---- Sun/moon glow — kept the soft pulse (transform+opacity, cheap).
+   Removed the rotating godray conic-gradient: it covered a huge area
+   and repainted every frame for very little visual payoff. Replaced
+   with a single static soft ray tint baked into the glow itself. ---- */
 .scene-sun {
   position: absolute;
   left: 50%;
@@ -44,6 +43,7 @@
   width: 300px;
   height: 300px;
   margin: -150px 0 0 -150px;
+  will-change: transform, opacity;
 }
 .scene-sun::before {
   content: "";
@@ -54,38 +54,22 @@
     circle,
     rgba(255, 222, 158, 0.65) 0%,
     rgba(255, 196, 120, 0.32) 32%,
-    rgba(255, 190, 110, 0.12) 58%,
+    rgba(255, 190, 110, 0.14) 58%,
     transparent 75%
   );
-  filter: blur(1px);
   animation: sunPulse 6s ease-in-out infinite;
-}
-.scene-sun::after {
-  content: "";
-  position: absolute;
-  inset: -60%;
-  background: conic-gradient(
-    from 0deg,
-    rgba(255, 214, 150, 0.14) 0deg 6deg,
-    transparent 6deg 26deg
-  );
-  border-radius: 50%;
-  animation: godrayRotate 40s linear infinite;
 }
 @keyframes sunPulse {
   0%, 100% { opacity: 0.85; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.05); }
-}
-@keyframes godrayRotate {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
+  50%      { opacity: 1;    transform: scale(1.05); }
 }
 
-/* ---- Stars — layered dots, twinkling, now covering more of the sky ---- */
+/* ---- Stars — twinkle is opacity-only on one composited layer, cheap ---- */
 .scene-stars {
   position: absolute;
   top: 0; left: 0; right: 0;
   height: 70%;
+  will-change: opacity;
   background-image:
     radial-gradient(1.6px 1.6px at 8% 12%, rgba(255,255,255,0.9), transparent),
     radial-gradient(1.3px 1.3px at 18% 25%, rgba(255,255,255,0.7), transparent),
@@ -112,11 +96,13 @@
   to   { opacity: 1; }
 }
 
-/* ---- Floating gold dust — slow drifting motes across the whole scene,
-   giving it life beyond the static gradient/stars. ---- */
+/* ---- Gold dust — was animating background-position (full repaint every
+   frame, forever). Now it's a static field that twinkles via opacity
+   only, same trick as the stars, which the compositor handles for free. ---- */
 .scene-dust {
   position: absolute;
   inset: 0;
+  will-change: opacity;
   background-image:
     radial-gradient(2px 2px at 10% 20%, rgba(243,217,128,0.55), transparent),
     radial-gradient(1.6px 1.6px at 30% 70%, rgba(243,217,128,0.4), transparent),
@@ -128,15 +114,15 @@
     radial-gradient(1.6px 1.6px at 60% 15%, rgba(243,217,128,0.35), transparent);
   background-repeat: repeat;
   background-size: 100% 100%;
-  animation: dustDrift 26s linear infinite;
+  animation: dustTwinkle 9s ease-in-out infinite alternate;
   opacity: 0.8;
 }
-@keyframes dustDrift {
-  0%   { background-position: 0 0; }
-  100% { background-position: 4% -12%; }
+@keyframes dustTwinkle {
+  from { opacity: 0.45; }
+  to   { opacity: 0.85; }
 }
 
-/* ---- Clouds — soft, blurred, drifting slowly across the upper sky ---- */
+/* ---- Clouds — transform-only drift, already cheap, left as-is ---- */
 .scene-clouds {
   position: absolute;
   top: 0; left: 0;
@@ -144,9 +130,9 @@
   height: 45%;
 }
 .cloud { fill: rgba(255, 255, 255, 0.08); }
-.cloud-a { animation: driftRight 90s linear infinite; }
-.cloud-b { animation: driftLeft 110s linear infinite; }
-.cloud-c { animation: driftRight 130s linear infinite; }
+.cloud-a { animation: driftRight 90s linear infinite; will-change: transform; }
+.cloud-b { animation: driftLeft 110s linear infinite; will-change: transform; }
+.cloud-c { animation: driftRight 130s linear infinite; will-change: transform; }
 @keyframes driftRight {
   from { transform: translateX(-60px); }
   to   { transform: translateX(60px); }
@@ -156,8 +142,7 @@
   to   { transform: translateX(-60px); }
 }
 
-/* ---- Mount Olympus silhouette — taller and a touch more saturated so
-   it reads clearly instead of blending into the dark ---- */
+/* ---- Mount Olympus silhouette (static) ---- */
 .scene-mountains {
   position: absolute;
   bottom: 0; left: 0;
@@ -170,10 +155,9 @@
   fill: none;
   stroke: rgba(246, 198, 110, 0.4);
   stroke-width: 1.5;
-  filter: blur(0.5px);
 }
 
-/* ---- Ruined temple / colonnade silhouette, flanking the reels ---- */
+/* ---- Ruined temple silhouette (static) ---- */
 .scene-temple {
   position: absolute;
   bottom: 0; left: 0;
@@ -186,9 +170,8 @@
   opacity: 0.92;
 }
 
-/* ---- Large rotating laurel-wreath emblem watermark, centered behind
-   the app panel — a slow, barely-there flourish that ties the whole
-   background to the game's Greek-treasury theme. ---- */
+/* ---- Laurel emblem watermark — transform-only rotation, compositor
+   handles this cheaply, kept as the one "always on" motion element. ---- */
 .scene-emblem {
   position: absolute;
   left: 50%;
@@ -198,6 +181,7 @@
   margin: -320px 0 0 -320px;
   opacity: 0.05;
   color: #f3d980;
+  will-change: transform;
   animation: emblemSpin 140s linear infinite;
 }
 @keyframes emblemSpin {
@@ -205,9 +189,7 @@
   to   { transform: rotate(360deg); }
 }
 
-/* ---- Gentle vignette — warmer and lighter than before so the scene
-   stays visible through it instead of crushing to near-black at the
-   edges; still dark enough to keep the foreground panel legible. ---- */
+/* ---- Vignette (static) ---- */
 .scene-vignette {
   position: absolute;
   inset: 0;
@@ -219,9 +201,16 @@
   );
 }
 
+/* ---- On small/likely-weaker devices, drop the two priciest ambient
+   layers (dust twinkle + emblem spin) entirely — the sky/stars/mountains
+   still read as a full scene without them. ---- */
+@media (max-width: 480px) {
+  .scene-dust { animation: none; opacity: 0.55; }
+  .scene-emblem { animation: none; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .scene-sun::before,
-  .scene-sun::after,
   .scene-stars,
   .scene-dust,
   .scene-emblem,

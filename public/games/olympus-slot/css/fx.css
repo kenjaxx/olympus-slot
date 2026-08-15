@@ -38,8 +38,8 @@
   height: 6px;
   margin: -3px 0 0 -3px;
   border-radius: 50%;
-  background: var(--gold-bright);
-  box-shadow: 0 0 6px 2px rgba(212, 175, 55, 0.85);
+  background: var(--spark-color, var(--gold-bright));
+  box-shadow: 0 0 6px 2px var(--spark-color, rgba(212, 175, 55, 0.85));
   pointer-events: none;
   z-index: 6;
   animation: sparkFly 0.5s ease-out forwards;
@@ -420,4 +420,47 @@
   .fs-trigger-title { font-size: 22px; }
   .fs-trigger-text { font-size: 13px; }
   .bell-icon { width: 58px; height: 58px; }
+}
+
+/* ---- Hit ring burst — colored ring snaps onto each hit tile, matched
+   to that symbol's tier accent color via --ring-color ---- */
+.hit-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 8px;
+  border: 2px solid var(--ring-color, var(--gold-bright));
+  box-shadow: 0 0 10px 1px var(--ring-color, var(--gold-bright));
+  pointer-events: none;
+  z-index: 5;
+  animation: hitRingExpand 0.5s cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+}
+@keyframes hitRingExpand {
+  0%   { transform: scale(0.85); opacity: 0.95; }
+  100% { transform: scale(1.55); opacity: 0; }
+}
+
+/* ---- Glint sweep across a hit tile — a quick light streak, separate
+   from the spin-button shine so it can be short and punchy ---- */
+.hit-glint {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: 6px;
+  pointer-events: none;
+  z-index: 4;
+}
+.hit-glint::after {
+  content: "";
+  position: absolute;
+  top: -20%;
+  left: -60%;
+  width: 40%;
+  height: 140%;
+  background: linear-gradient(115deg, transparent, rgba(255,255,255,0.85), transparent);
+  transform: translateX(0) skewX(-20deg);
+  animation: hitGlintSweep 0.5s ease-out forwards;
+}
+@keyframes hitGlintSweep {
+  0%   { transform: translateX(0) skewX(-20deg); }
+  100% { transform: translateX(420%) skewX(-20deg); }
 }
