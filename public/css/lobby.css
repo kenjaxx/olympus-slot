@@ -369,3 +369,17 @@ h1 {
   white-space: nowrap;
 }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+.thumb-color {
+  background: conic-gradient(
+    from 0deg,
+    #c23b3b 0deg 60deg,
+    #d4af37 60deg 120deg,
+    #3d5a8a 120deg 180deg,
+    #6fa287 180deg 240deg,
+    #f4ecd8 240deg 300deg,
+    #cf6fa0 300deg 360deg
+  );
+  border: 1px solid var(--panel-line);
+  color: #1a1330;
+}

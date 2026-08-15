@@ -1,6 +1,7 @@
 const express = require("express");
 const path = require("path");
 const game = require("./game");
+const colorGame = require("./colorGame");
 
 const app = express();
 app.use(express.json());
@@ -113,6 +114,59 @@ app.post("/api/reset/:player", (req, res) => {
   res.json(players[req.params.player]);
 });
 
+// ---- Color Game endpoint ----
+// Body: { player, bets: { red: 20, blue: 10, ... } }
+// Any subset of the 6 colors can carry a bet in the same round. Every
+// dollar wagered on a color that does NOT match the roll is simply lost
+// (already deducted); every dollar on the matching color pays out at
+// colorGame's payout multiplier.
+app.post("/api/color/roll", (req, res) => {
+  const { player, bets } = req.body;
+  if (!player) {
+    return res.status(400).json({ error: "player is required" });
+  }
+  if (!bets || typeof bets !== "object" || Array.isArray(bets)) {
+    return res.status(400).json({ error: "bets object is required" });
+  }
+
+  const p = getPlayer(player);
+
+  // Validate + total the bets server-side. Unknown colors are rejected
+  // outright; non-positive amounts are just skipped.
+  let total = 0;
+  const cleanBets = {};
+  for (const [color, amountRaw] of Object.entries(bets)) {
+    if (!colorGame.COLORS.includes(color)) {
+      return res.status(400).json({ error: `unknown color: ${color}` });
+    }
+    const amount = Math.round(Number(amountRaw));
+    if (!Number.isFinite(amount) || amount <= 0) continue;
+    cleanBets[color] = amount;
+    total += amount;
+  }
+
+  if (Object.keys(cleanBets).length === 0) {
+    return res.status(400).json({ error: "place at least one bet" });
+  }
+  if (total < MIN_BET) {
+    return res.status(400).json({ error: `total bet must be at least ${MIN_BET}` });
+  }
+  if (p.balance < total) {
+    return res.status(400).json({ error: "insufficient balance" });
+  }
+
+  p.balance -= total;
+  const result = colorGame.resolveRoll(cleanBets);
+  p.balance += result.totalWin;
+
+  res.json({
+    ...result,
+    bets: cleanBets,
+    totalBet: total,
+    balance: p.balance,
+  });
+});
+
 // ---- Admin-only endpoints ----
 const ADMIN_KEY = process.env.ADMIN_KEY || "changeme";
 
@@ -126,6 +180,19 @@ app.post("/api/admin/winrate", (req, res) => {
   const { rate } = req.body;
   game.setWinRate(rate);
   res.json({ winRate: game.getWinRate() });
+});
+
+app.get("/api/admin/color-odds", (req, res) => {
+  if (req.headers["x-admin-key"] !== ADMIN_KEY) return res.sendStatus(403);
+  res.json({ weights: colorGame.getWeights(), payoutMultiplier: colorGame.getPayoutMultiplier() });
+});
+
+app.post("/api/admin/color-odds", (req, res) => {
+  if (req.headers["x-admin-key"] !== ADMIN_KEY) return res.sendStatus(403);
+  const { color, weight, payoutMultiplier } = req.body;
+  if (color) colorGame.setWeight(color, weight);
+  if (payoutMultiplier !== undefined) colorGame.setPayoutMultiplier(payoutMultiplier);
+  res.json({ weights: colorGame.getWeights(), payoutMultiplier: colorGame.getPayoutMultiplier() });
 });
 
 const PORT = process.env.PORT || 3000;

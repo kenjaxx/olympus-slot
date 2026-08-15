@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Color Game — Loading</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;800&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="app">
+
+    <section id="loadingScreen" class="loading-screen">
+      <div class="loading-dice">
+        <span></span><span></span><span></span><span></span><span></span><span></span>
+      </div>
+      <p class="loading-status" id="loadingStatus" style="font-size:14px;color:var(--parchment);font-family:var(--font-display);letter-spacing:1px;">Color Game</p>
+      <div class="loading-bar-track">
+        <div class="loading-bar-fill" id="loadingBarFill"></div>
+      </div>
+      <p class="loading-status" id="loadingStatus">Painting the faces…</p>
+    </section>
+
+    <section id="introScreen" class="intro-screen">
+      <a href="/" class="lobby-back">‹ Game Hall</a>
+
+      <div class="game-header">
+        <h1>Color Game</h1>
+        <p class="subtitle">Pick your colors, roll the box, win on a match</p>
+      </div>
+
+      <div class="intro-swatches">
+        <span class="sw-red"></span><span class="sw-yellow"></span><span class="sw-blue"></span>
+        <span class="sw-green"></span><span class="sw-white"></span><span class="sw-pink"></span>
+      </div>
+
+      <div class="intro-card">
+        <h2>How to Play</h2>
+        <ul class="intro-rules">
+          <li>
+            <span class="rule-icon">1</span>
+            <span>Place a bet on <strong>any of the 6 colors</strong> — you can bet on more than one color in the same round.</span>
+          </li>
+          <li>
+            <span class="rule-icon">2</span>
+            <span>Hit <strong>Roll</strong> and watch the box tumble in 3D. It always settles on exactly one color.</span>
+          </li>
+          <li>
+            <span class="rule-icon">3</span>
+            <span>If the box lands on a color you bet on, that bet pays out <strong>5×</strong>. Bets on the other colors are lost.</span>
+          </li>
+          <li>
+            <span class="rule-icon">4</span>
+            <span>The roll is decided entirely on the <strong>server</strong> — the browser only finds out the result after you roll.</span>
+          </li>
+        </ul>
+        <p class="intro-disclaimer">Play-money entertainment only. No real currency, purchases, or withdrawals are involved.</p>
+      </div>
+
+      <button id="startGameBtn" class="start-game-btn">Start Game</button>
+    </section>
+
+  </div>
+
+  <script src="js/intro.js"></script>
+</body>
+</html>

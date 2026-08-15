@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
+  <title>Color Game (play money)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="app">
+    <a href="/" class="lobby-back">‹ Game Hall</a>
+
+    <div class="game-header">
+      <h1>Color Game</h1>
+      <p class="subtitle">Play-money demo — no real currency involved</p>
+    </div>
+
+    <div class="gold-divider"></div>
+
+    <div class="player-row">
+      <label for="loadAmount">Add funds</label>
+      <input type="number" id="loadAmount" min="100" step="100" value="1000" />
+      <button id="topupBtn">Add</button>
+    </div>
+
+    <div class="card">
+      <div class="stats-row">
+        <div>
+          <p class="label">Balance</p>
+          <p class="value" id="balance">1,000</p>
+        </div>
+        <div>
+          <p class="label">Last win</p>
+          <p class="value success" id="lastwin">0</p>
+        </div>
+      </div>
+
+      <div id="cubeContainer"></div>
+
+      <p id="msg" class="msg">Pick your colors and roll the box</p>
+
+      <div class="bet-grid">
+        <div class="color-tile tile-red" data-color="red">
+          <div class="swatch"></div>
+          <span class="color-name">Red</span>
+          <input type="number" min="0" step="10" value="0" />
+          <div class="result-tag"></div>
+        </div>
+        <div class="color-tile tile-yellow" data-color="yellow">
+          <div class="swatch"></div>
+          <span class="color-name">Yellow</span>
+          <input type="number" min="0" step="10" value="0" />
+          <div class="result-tag"></div>
+        </div>
+        <div class="color-tile tile-blue" data-color="blue">
+          <div class="swatch"></div>
+          <span class="color-name">Blue</span>
+          <input type="number" min="0" step="10" value="0" />
+          <div class="result-tag"></div>
+        </div>
+        <div class="color-tile tile-green" data-color="green">
+          <div class="swatch"></div>
+          <span class="color-name">Green</span>
+          <input type="number" min="0" step="10" value="0" />
+          <div class="result-tag"></div>
+        </div>
+        <div class="color-tile tile-white" data-color="white">
+          <div class="swatch"></div>
+          <span class="color-name">White</span>
+          <input type="number" min="0" step="10" value="0" />
+          <div class="result-tag"></div>
+        </div>
+        <div class="color-tile tile-pink" data-color="pink">
+          <div class="swatch"></div>
+          <span class="color-name">Pink</span>
+          <input type="number" min="0" step="10" value="0" />
+          <div class="result-tag"></div>
+        </div>
+      </div>
+
+      <p class="total-stake">Total staked: <strong id="totalStake">0</strong></p>
+
+      <div class="bet-actions">
+        <button id="clearBtn">Clear bets</button>
+      </div>
+
+      <button id="rollBtn" class="roll-btn">Roll</button>
+    </div>
+  </div>
+
+  <script src="js/cube.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
