@@ -10,7 +10,7 @@ const COLS = 5;
 // ---- THE CONTROL KNOB ----
 // 0.0 = never win, 1.0 = always win.
 //
-// WIN_RATE now auto-adjusts after every spin instead of staying fixed:
+// WIN_RATE auto-adjusts after every spin instead of staying fixed:
 //   - A spin that pays out ZERO (a "cold" spin) bumps WIN_RATE up by
 //     RATE_STEP (2%), so a losing streak gradually gets "hotter" and a
 //     win becomes more likely the longer it's been since the last one.
@@ -28,6 +28,17 @@ const COLS = 5;
 const START_WIN_RATE = 0.01;
 const RESET_WIN_RATE = 0.2;
 const RATE_STEP = 0.02;
+
+// ---- COMBO MULTIPLIER ----
+// The multiplier is no longer a big random "orb" value landing by
+// chance. It's a combo counter: every tumble round that breaks a
+// winning cluster ("tile break") adds +COMBO_STEP to the running
+// multiplier, up to a hard cap of MAX_MULTIPLIER. The trail carries
+// across an entire free-spins bonus round (via carryMultiplier), the
+// same way it did before, but the total can never exceed the cap no
+// matter how many breaks happen across the whole round.
+const MAX_MULTIPLIER = 16;
+const COMBO_STEP = 1;
 
 let WIN_RATE = START_WIN_RATE;
 
@@ -49,18 +60,20 @@ function randomGrid() {
 
 // Resolves one full spin, including any chained tumbles, server-side.
 //
-// `carryMultiplier` is the multiplier trail accumulated so far during a
-// free-spin bonus round (0 for ordinary paid spins). Any orb multipliers
-// won this spin are ADDED on top of that carry-in and returned as
-// `carryMultiplier` in the result, so the caller can persist it forward
-// to the next free spin — mirroring how real scatter-slot bonus rounds
-// build up one big multiplier across the whole round instead of
-// resetting it every spin.
+// `carryMultiplier` is the combo trail accumulated so far during a
+// free-spin bonus round (0 for ordinary paid spins). Every winning
+// tumble round in THIS spin adds +COMBO_STEP on top of that carry-in,
+// clamped so the total multiplier (1 + carry + gained) never exceeds
+// MAX_MULTIPLIER. The updated trail is returned as `carryMultiplier` so
+// the caller can persist it forward to the next free spin.
 function resolveSpin(bet, carryMultiplier) {
   carryMultiplier = Number.isFinite(carryMultiplier) ? carryMultiplier : 0;
+  // Defensive clamp in case something upstream (admin endpoint, resumed
+  // session, etc.) ever hands back an out-of-range value.
+  carryMultiplier = Math.max(0, Math.min(carryMultiplier, MAX_MULTIPLIER - 1));
 
   let totalWin = 0;
-  let spinOrbTotal = 0;
+  let comboGained = 0; // combo steps actually gained THIS spin (post-cap)
   const rounds = [];
 
   // ---- Scatter count for this spin ----
@@ -85,25 +98,21 @@ function resolveSpin(bet, carryMultiplier) {
     if (!willWin) break;
 
     const clusterSize = 8 + Math.floor(Math.random() * 4);
-    let orbMult = 0;
-    if (Math.random() < 0.4) {
-      const orbCount = 1 + Math.floor(Math.random() * 2);
-      const vals = [2, 3, 5, 10, 25];
-      for (let k = 0; k < orbCount; k++) {
-        orbMult += vals[Math.floor(Math.random() * vals.length)];
-      }
-    }
-
     const clusterWin = bet * (clusterSize / 8) * 0.8;
     totalWin += clusterWin;
-    if (orbMult > 0) spinOrbTotal += orbMult;
 
-    rounds.push({ clusterSize, orbMult });
+    // Combo multiplier: this tile break earns +COMBO_STEP, but only if
+    // the running total hasn't already hit the cap.
+    const totalSoFar = 1 + carryMultiplier + comboGained;
+    const comboGain = totalSoFar < MAX_MULTIPLIER ? COMBO_STEP : 0;
+    comboGained += comboGain;
+
+    rounds.push({ clusterSize, comboGain });
     roundNum++;
   }
 
-  const newCarryMultiplier = carryMultiplier + spinOrbTotal;
-  const totalMult = 1 + newCarryMultiplier;
+  const newCarryMultiplier = Math.min(carryMultiplier + comboGained, MAX_MULTIPLIER - 1);
+  const totalMult = Math.min(1 + newCarryMultiplier, MAX_MULTIPLIER);
   const finalWin = Math.round(totalWin * totalMult);
 
   // ---- Auto-adjust WIN_RATE for the NEXT spin, based on this one ----
@@ -129,6 +138,7 @@ function resolveSpin(bet, carryMultiplier) {
     multiplier: totalMult,
     carryMultiplier: newCarryMultiplier,
     win: finalWin,
+    maxMultiplier: MAX_MULTIPLIER,
   };
 }
 
@@ -140,4 +150,5 @@ module.exports = {
   SCATTER,
   ROWS,
   COLS,
+  MAX_MULTIPLIER,
 };

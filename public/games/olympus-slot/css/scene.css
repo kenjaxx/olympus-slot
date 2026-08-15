@@ -1,9 +1,15 @@
 /* ---------------------------------------------------------------------
-   Olympus scene backdrop — optimized: every continuous animation here
-   now only touches `opacity`/`transform` (GPU-compositable), instead of
-   `background-position` or huge rotating conic-gradients, which forced
-   full-layer repaints every frame. Visual result is basically the same;
-   the perf cost is a fraction of what it was.
+   Olympus scene backdrop — a dusk sky over Mount Olympus with a ruined
+   temple silhouette, drifting clouds, twinkling stars, floating gold
+   dust, and a faint rotating laurel emblem.
+
+   PERF: every continuous animation here only touches `opacity`/
+   `transform` now (compositor-only, never triggers layout/paint of
+   anything else). The whole scene also gets `contain: layout style
+   paint` + its own compositing layer (`transform: translateZ(0)`), so
+   its animations are fully isolated — the browser never has to re-check
+   whether a background animation frame affects the app panel sitting on
+   top of it, or vice versa.
 --------------------------------------------------------------------- */
 
 .olympus-scene {
@@ -12,9 +18,11 @@
   z-index: 0;
   overflow: hidden;
   pointer-events: none;
+  contain: layout style paint;
+  transform: translateZ(0);
 }
 
-/* ---- Sky ---- */
+/* ---- Sky (static) ---- */
 .scene-sky {
   position: absolute;
   inset: 0;
@@ -32,10 +40,10 @@
   );
 }
 
-/* ---- Sun/moon glow — kept the soft pulse (transform+opacity, cheap).
-   Removed the rotating godray conic-gradient: it covered a huge area
-   and repainted every frame for very little visual payoff. Replaced
-   with a single static soft ray tint baked into the glow itself. ---- */
+/* ---- Sun/moon glow — soft pulse via opacity+transform only. The old
+   rotating conic-gradient "godray" layer (inset:-60%, repainted every
+   frame across a huge area) has been removed entirely; it cost far more
+   than it added visually. ---- */
 .scene-sun {
   position: absolute;
   left: 50%;
@@ -43,7 +51,7 @@
   width: 300px;
   height: 300px;
   margin: -150px 0 0 -150px;
-  will-change: transform, opacity;
+  will-change: opacity;
 }
 .scene-sun::before {
   content: "";
@@ -64,7 +72,7 @@
   50%      { opacity: 1;    transform: scale(1.05); }
 }
 
-/* ---- Stars — twinkle is opacity-only on one composited layer, cheap ---- */
+/* ---- Stars — opacity-only twinkle on one composited layer ---- */
 .scene-stars {
   position: absolute;
   top: 0; left: 0; right: 0;
@@ -96,9 +104,9 @@
   to   { opacity: 1; }
 }
 
-/* ---- Gold dust — was animating background-position (full repaint every
-   frame, forever). Now it's a static field that twinkles via opacity
-   only, same trick as the stars, which the compositor handles for free. ---- */
+/* ---- Gold dust — opacity-only twinkle, same trick as stars. No longer
+   animates background-position (that forced a full-layer repaint every
+   single frame, forever). ---- */
 .scene-dust {
   position: absolute;
   inset: 0;
@@ -122,7 +130,7 @@
   to   { opacity: 0.85; }
 }
 
-/* ---- Clouds — transform-only drift, already cheap, left as-is ---- */
+/* ---- Clouds — transform-only drift, already cheap ---- */
 .scene-clouds {
   position: absolute;
   top: 0; left: 0;
@@ -157,7 +165,7 @@
   stroke-width: 1.5;
 }
 
-/* ---- Ruined temple silhouette (static) ---- */
+/* ---- Ruined temple / colonnade silhouette (static) ---- */
 .scene-temple {
   position: absolute;
   bottom: 0; left: 0;
@@ -170,8 +178,8 @@
   opacity: 0.92;
 }
 
-/* ---- Laurel emblem watermark — transform-only rotation, compositor
-   handles this cheaply, kept as the one "always on" motion element. ---- */
+/* ---- Large rotating laurel-wreath emblem watermark — transform-only
+   rotation, the compositor handles this virtually for free. ---- */
 .scene-emblem {
   position: absolute;
   left: 50%;
@@ -201,12 +209,13 @@
   );
 }
 
-/* ---- On small/likely-weaker devices, drop the two priciest ambient
-   layers (dust twinkle + emblem spin) entirely — the sky/stars/mountains
-   still read as a full scene without them. ---- */
+/* ---- On phones, drop the two priciest ambient layers (dust twinkle +
+   emblem spin) entirely — the sky/stars/mountains still read as a full
+   scene without them, and this is where the CPU budget is tightest. ---- */
 @media (max-width: 480px) {
   .scene-dust { animation: none; opacity: 0.55; }
   .scene-emblem { animation: none; }
+  .cloud-a, .cloud-b, .cloud-c { animation: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {

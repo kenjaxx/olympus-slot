@@ -31,7 +31,8 @@
 }
 
 /* Small gold spark, radiating out from a hit cell's center via --dx/--dy
-   set inline per-particle in reels.js */
+   set inline per-particle in reels.js. Color is per-hit via --spark-color
+   (defaults to gold), matched to that tile's symbol tier. */
 .spark {
   position: absolute;
   width: 6px;
@@ -42,6 +43,7 @@
   box-shadow: 0 0 6px 2px var(--spark-color, rgba(212, 175, 55, 0.85));
   pointer-events: none;
   z-index: 6;
+  will-change: transform, opacity;
   animation: sparkFly 0.5s ease-out forwards;
 }
 @keyframes sparkFly {
@@ -49,9 +51,54 @@
   100% { transform: translate(var(--dx), var(--dy)) scale(0.25); opacity: 0; }
 }
 
+/* ---- Hit ring burst — a colored ring snaps onto each hit tile and
+   expands outward, matched to that symbol's tier accent color via
+   --ring-color (set inline per-hit in reels.js). ---- */
+.hit-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 8px;
+  border: 2px solid var(--ring-color, var(--gold-bright));
+  box-shadow: 0 0 10px 1px var(--ring-color, var(--gold-bright));
+  pointer-events: none;
+  z-index: 5;
+  will-change: transform, opacity;
+  animation: hitRingExpand 0.5s cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+}
+@keyframes hitRingExpand {
+  0%   { transform: scale(0.85); opacity: 0.95; }
+  100% { transform: scale(1.55); opacity: 0; }
+}
+
+/* ---- Glint sweep across a hit tile — a quick light streak, layered on
+   top of the ring/sparks so a hit feels like it has real "impact". ---- */
+.hit-glint {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: 6px;
+  pointer-events: none;
+  z-index: 4;
+}
+.hit-glint::after {
+  content: "";
+  position: absolute;
+  top: -20%;
+  left: -60%;
+  width: 40%;
+  height: 140%;
+  background: linear-gradient(115deg, transparent, rgba(255,255,255,0.85), transparent);
+  transform: translateX(0) skewX(-20deg);
+  will-change: transform;
+  animation: hitGlintSweep 0.5s ease-out forwards;
+}
+@keyframes hitGlintSweep {
+  0%   { transform: translateX(0) skewX(-20deg); }
+  100% { transform: translateX(420%) skewX(-20deg); }
+}
+
 /* Reel viewport gets a quick bright flash the instant it lands, plus a
-   tiny overshoot-and-settle bounce on the strip itself so the stop reads
-   as having weight rather than just snapping still. */
+   tiny overshoot-and-settle bounce on the strip itself. */
 .reels-wrap .landed,
 .reels.landed {
   animation: reelLandFlash 0.22s ease-out;
@@ -83,6 +130,7 @@
   border: 3px solid var(--gold-bright);
   pointer-events: none;
   z-index: 4;
+  will-change: transform, opacity;
   animation: shockwaveExpand 0.6s ease-out forwards;
 }
 @keyframes shockwaveExpand {
@@ -147,6 +195,7 @@
   );
   opacity: 0;
   transition: opacity 0.3s ease;
+  will-change: transform;
 }
 .win-banner.show::before {
   opacity: 1;
@@ -155,7 +204,7 @@
 .win-banner.big::before { animation-duration: 3.2s; }
 @keyframes rayRotate {
   from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
+  to { transform: rotate(360deg); }
 }
 
 .win-laurel {
@@ -203,6 +252,7 @@
   box-shadow: 0 0 4px rgba(212, 175, 55, 0.7);
   pointer-events: none;
   z-index: 5;
+  will-change: transform, opacity;
   animation: coinFall linear forwards;
 }
 @keyframes coinFall {
@@ -231,16 +281,14 @@
   100% { transform: translateY(0) scale(1); opacity: 1; }
 }
 
-/* ---- Pre-win suspense beat ----
-   .fading-out plays a quick brighten+settle as the vignette hands off to
-   the win banner, so the two states crossfade instead of hard-cutting. */
+/* ---- Pre-win suspense beat ---- */
 .reels-wrap.suspense .reels {
   animation: suspensePulse 0.5s ease-in-out infinite alternate;
   filter: brightness(0.5) saturate(1.35);
 }
 @keyframes suspensePulse {
   from { transform: scale(1); }
-  to   { transform: scale(1.02); }
+  to { transform: scale(1.02); }
 }
 .reels-wrap.suspense::after {
   content: "";
@@ -255,7 +303,7 @@
 }
 @keyframes suspenseVignette {
   from { opacity: 0.7; }
-  to   { opacity: 1; }
+  to { opacity: 1; }
 }
 .reels-wrap.suspense.fading-out::after {
   animation: none;
@@ -280,6 +328,7 @@
   z-index: 60;
   transform: translate(0, 0) scale(1);
   opacity: 1;
+  will-change: transform, opacity;
   transition: transform 0.42s cubic-bezier(0.2, 0.8, 0.3, 1), opacity 0.42s ease-in;
 }
 
@@ -292,8 +341,21 @@
   100% { transform: scale(1); text-shadow: 0 0 6px rgba(212, 175, 55, 0.45); }
 }
 
-/* ---- Free-spins bonus-round total-win screen (shared base for both
-   the TOTAL overlay and the TRIGGER overlay below) ---- */
+/* ---- Maxed-out combo multiplier (16x): a steady gold glow so hitting
+   the cap reads as a distinct, celebratory state rather than just
+   another number. Scoped to one small text element, so the continuous
+   text-shadow animation here is negligible cost. ---- */
+.value.accent.maxed {
+  color: var(--gold-bright);
+  text-shadow: 0 0 10px rgba(212, 175, 55, 0.9);
+  animation: maxedPulse 1.1s ease-in-out infinite alternate;
+}
+@keyframes maxedPulse {
+  from { text-shadow: 0 0 8px rgba(212, 175, 55, 0.6); }
+  to   { text-shadow: 0 0 16px rgba(212, 175, 55, 1); }
+}
+
+/* ---- Free-spins bonus-round total-win screen ---- */
 .fs-total-overlay {
   position: fixed;
   inset: 0;
@@ -309,15 +371,12 @@
 }
 .fs-total-overlay.show { opacity: 1; pointer-events: auto; }
 
-/* Closing state: card scales back down and fades, mirroring the pop-in,
-   instead of the overlay just vanishing on opacity:0. Toggled briefly by
-   JS right before the .show class is removed. */
 .fs-total-overlay.closing .fs-total-card {
   animation: fsCardPopOut 0.22s ease-in forwards;
 }
 @keyframes fsCardPopOut {
   from { transform: scale(1); opacity: 1; }
-  to   { transform: scale(0.85); opacity: 0; }
+  to { transform: scale(0.85); opacity: 0; }
 }
 
 .fs-total-card {
@@ -332,7 +391,7 @@
 }
 @keyframes fsCardPop {
   from { transform: scale(0.7); opacity: 0; }
-  to   { transform: scale(1); opacity: 1; }
+  to { transform: scale(1); opacity: 1; }
 }
 
 .fs-total-label {
@@ -353,7 +412,7 @@
 }
 @keyframes fsAmountGlow {
   from { text-shadow: 0 0 10px rgba(212,175,55,0.4); }
-  to   { text-shadow: 0 0 26px rgba(212,175,55,0.9); }
+  to { text-shadow: 0 0 26px rgba(212,175,55,0.9); }
 }
 .fs-total-btn {
   padding: 10px 26px;
@@ -370,7 +429,7 @@
 
 /* ---- Free-spins TRIGGER overlay — bell ring + "you won free spins" ---- */
 .fs-trigger-overlay {
-  z-index: 55; /* sits above the standard fs-total overlay if both were ever queued */
+  z-index: 55;
 }
 
 .bell-wrap {
@@ -420,47 +479,4 @@
   .fs-trigger-title { font-size: 22px; }
   .fs-trigger-text { font-size: 13px; }
   .bell-icon { width: 58px; height: 58px; }
-}
-
-/* ---- Hit ring burst — colored ring snaps onto each hit tile, matched
-   to that symbol's tier accent color via --ring-color ---- */
-.hit-ring {
-  position: absolute;
-  inset: 0;
-  border-radius: 8px;
-  border: 2px solid var(--ring-color, var(--gold-bright));
-  box-shadow: 0 0 10px 1px var(--ring-color, var(--gold-bright));
-  pointer-events: none;
-  z-index: 5;
-  animation: hitRingExpand 0.5s cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
-}
-@keyframes hitRingExpand {
-  0%   { transform: scale(0.85); opacity: 0.95; }
-  100% { transform: scale(1.55); opacity: 0; }
-}
-
-/* ---- Glint sweep across a hit tile — a quick light streak, separate
-   from the spin-button shine so it can be short and punchy ---- */
-.hit-glint {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  border-radius: 6px;
-  pointer-events: none;
-  z-index: 4;
-}
-.hit-glint::after {
-  content: "";
-  position: absolute;
-  top: -20%;
-  left: -60%;
-  width: 40%;
-  height: 140%;
-  background: linear-gradient(115deg, transparent, rgba(255,255,255,0.85), transparent);
-  transform: translateX(0) skewX(-20deg);
-  animation: hitGlintSweep 0.5s ease-out forwards;
-}
-@keyframes hitGlintSweep {
-  0%   { transform: translateX(0) skewX(-20deg); }
-  100% { transform: translateX(420%) skewX(-20deg); }
 }

@@ -2,6 +2,20 @@
 // Everything about drawing and animating the 4x5 grid, plus the win banner.
 // Turbo mode has been removed — every spin always plays the full-quality
 // cascade/tumble/suspense animation at normal speed.
+//
+// PERF NOTES (read before changing this file):
+//   - buildStaticGrid/animateReelDrop build columns in a DocumentFragment
+//     and append it ONCE, instead of calling reelsEl.appendChild() in a
+//     loop — each individual appendChild into a live, visible container
+//     can force a layout pass, so batching this is the single biggest
+//     win here (20 cells + up to ~120 filler cells per spin, previously
+//     inserted one at a time).
+//   - The reel-drop filler count ("extra") was cut from 10 to 6 rows —
+//     40% fewer throwaway DOM nodes created and destroyed every spin.
+//   - Decorative-only effects (sparks, coin shower) are skipped while the
+//     tab is hidden (document.hidden) — no visible cost to skipping them
+//     when nobody can see them, but it avoids burning CPU in a
+//     backgrounded tab during autospin.
 
 (function () {
   const ROWS = 4, COLS = 5, CELL_H = 54;
@@ -20,6 +34,8 @@
   const winBannerAmount = document.getElementById("winBannerAmount");
   const netLineEl = document.getElementById("netLine");
 
+  const DEFAULT_MAX_MULTIPLIER = 16;
+
   let cells = [];
   let cellSymbols = [];
 
@@ -27,8 +43,10 @@
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
-  function wrapClassFor(symbolKey) {
-    return CardArt.cardFor(symbolKey).className;
+  // True while the tab/window isn't visible — used to skip purely
+  // decorative particle work that nobody can see anyway.
+  function isHidden() {
+    return typeof document !== "undefined" && document.hidden;
   }
 
   function animateCount(el, to, duration, prefix) {
@@ -48,10 +66,14 @@
     requestAnimationFrame(step);
   }
 
+  // Builds the static (non-animated) grid using a single DocumentFragment
+  // so all 20 cells hit the live DOM in one append, not 20 separate ones.
   function buildStaticGrid(values) {
     reelsEl.innerHTML = "";
     cells = [];
     cellSymbols = values.slice();
+
+    const frag = document.createDocumentFragment();
     for (let c = 0; c < COLS; c++) {
       const col = document.createElement("div");
       col.style.cssText = "display:flex; flex-direction:column; gap:6px;";
@@ -65,21 +87,26 @@
         col.appendChild(d);
         cells[idx] = d;
       }
-      reelsEl.appendChild(col);
+      frag.appendChild(col);
     }
+    reelsEl.appendChild(frag);
   }
 
   // Full cascading reel-drop animation. Each column strip gets a quick
-  // overshoot-and-settle bounce right as it lands (in addition to the
-  // existing brightness flash), so the stop reads as having real weight
-  // instead of just snapping to a dead stop.
+  // overshoot-and-settle bounce right as it lands. Columns are built
+  // fully off-DOM (in a fragment) before being attached, and the filler
+  // row count is trimmed to keep per-spin DOM churn down.
   function animateReelDrop(finalValues) {
     return new Promise((resolve) => {
       reelsEl.innerHTML = "";
-      const extra = 10;
+      const extra = 6; // was 10 — fewer throwaway filler cells per column
       const colDelays = [0, 120, 240, 360, 480];
       let maxDelay = 0;
       const dropDistance = extra * (CELL_H + 6);
+
+      const frag = document.createDocumentFragment();
+      const viewports = [];
+      const strips = [];
 
       for (let c = 0; c < COLS; c++) {
         const viewport = document.createElement("div");
@@ -94,16 +121,26 @@
         for (let r = 0; r < ROWS; r++) stripSyms.push(finalValues[r * COLS + c]);
         for (let i = 0; i < extra; i++) stripSyms.push(CardArt.randomSymbolKey());
 
+        const stripFrag = document.createDocumentFragment();
         stripSyms.forEach((sym) => {
           const cell = document.createElement("div");
           cell.className = "cell";
           cell.innerHTML = CardArt.cardFor(sym).html;
-          strip.appendChild(cell);
+          stripFrag.appendChild(cell);
         });
+        strip.appendChild(stripFrag);
 
         viewport.appendChild(strip);
-        reelsEl.appendChild(viewport);
+        frag.appendChild(viewport);
+        viewports.push(viewport);
+        strips.push(strip);
+      }
 
+      reelsEl.appendChild(frag);
+
+      for (let c = 0; c < COLS; c++) {
+        const strip = strips[c];
+        const viewport = viewports[c];
         const duration = 900 + c * 150;
         const stopTime = colDelays[c] + duration;
         maxDelay = Math.max(maxDelay, stopTime);
@@ -118,9 +155,6 @@
           viewport.classList.add("landed");
           setTimeout(() => viewport.classList.remove("landed"), 220);
 
-          // Settle bounce: apply on the still-live strip (its transform is
-          // "translateY(0px)" at this point), then let it fall away —
-          // buildStaticGrid() below swaps the DOM shortly after anyway.
           strip.style.transition = "none";
           void strip.offsetWidth;
           strip.classList.add("reel-strip-settle");
@@ -135,6 +169,7 @@
   }
 
   function spawnSparks(cellEl, count, color) {
+    if (isHidden()) return;
     const wrapRect = reelsWrapEl.getBoundingClientRect();
     const cellRect = cellEl.getBoundingClientRect();
     const cx = cellRect.left - wrapRect.left + cellRect.width / 2;
@@ -155,8 +190,10 @@
     }
   }
 
-  // Colored ring that snaps onto a hit tile and expands outward.
+  // Colored ring that snaps onto a hit tile and expands outward, matched
+  // to that symbol's tier accent color.
   function spawnHitRing(cellEl, color) {
+    if (isHidden()) return;
     const ring = document.createElement("div");
     ring.className = "hit-ring";
     ring.style.setProperty("--ring-color", color || "var(--gold-bright)");
@@ -166,6 +203,7 @@
 
   // Quick light streak across a hit tile.
   function spawnHitGlint(cellEl) {
+    if (isHidden()) return;
     const glint = document.createElement("div");
     glint.className = "hit-glint";
     cellEl.appendChild(glint);
@@ -180,6 +218,7 @@
   }
 
   function spawnShockwave() {
+    if (isHidden()) return;
     const ring = document.createElement("div");
     ring.className = "shockwave";
     reelsWrapEl.appendChild(ring);
@@ -187,6 +226,7 @@
   }
 
   function spawnCoinShower(count) {
+    if (isHidden()) return;
     const wrapWidth = reelsWrapEl.clientWidth;
     for (let i = 0; i < count; i++) {
       const coin = document.createElement("div");
@@ -201,10 +241,10 @@
     }
   }
 
-  // Flies a "+Nx" label from a reel cell to the multiplier stat box, then
-  // pops/glows the multiplier value on arrival. Falls back to a plain pop
-  // if there's no origin cell to fly from.
-  function animateMultiplierHit(newValue, orbCellIdx) {
+  // Flies a "+Ngain x" label from a reel cell to the multiplier stat box,
+  // then pops/glows the multiplier value on arrival showing the new
+  // cumulative total. Falls back to a plain pop if there's no origin cell.
+  function animateMultiplierHit(newValue, orbCellIdx, gain) {
     return new Promise((resolve) => {
       const originEl = orbCellIdx >= 0 && cells[orbCellIdx] ? cells[orbCellIdx] : null;
 
@@ -216,7 +256,7 @@
         resolve();
       }
 
-      if (!originEl) {
+      if (!originEl || isHidden()) {
         pop();
         return;
       }
@@ -225,7 +265,7 @@
       const trect = multEl.getBoundingClientRect();
       const fly = document.createElement("div");
       fly.className = "mult-fly";
-      fly.textContent = "+" + newValue + "x";
+      fly.textContent = "+" + (gain || 1) + "x";
       fly.style.left = orect.left + orect.width / 2 + "px";
       fly.style.top = orect.top + orect.height / 2 + "px";
       document.body.appendChild(fly);
@@ -247,12 +287,6 @@
   // ---- Cascade: pop the hit tiles, then drop fresh ones into their place ----
   // Purely visual — dramatizes the tumble round the server already computed,
   // never changes odds or adds extra wins.
-  //
-  // IMPORTANT: swapping directly from the "pop" animation class to the
-  // "drop-in" animation class in the same tick can make some browsers skip
-  // restarting the animation (the element stays frozen at "pop"'s invisible
-  // end state forever). Fixed by resetting to a plain class and forcing a
-  // reflow (`void el.offsetWidth`) before adding the new animation class.
   async function popAndRefill(idxs) {
     try {
       idxs.forEach((i) => cells[i].classList.add("pop"));
@@ -284,16 +318,12 @@
   }
 
   // Flashes a random subset of NON-scatter cells to represent a tumble hit.
-  // If this round carries a multiplier orb, one flashed cell becomes an orb
-  // card — returns that cell's index (or -1) so the caller can animate the
-  // multiplier flying from that exact tile.
-  // Flashes a random subset of NON-scatter cells to represent a tumble hit.
-  // Each hit tile now gets a color-matched ring burst + glint + sparks
-  // (matched to that symbol's tier), so higher-tier hits visually pop more
-  // than a grape/kylix hit. If this round carries a multiplier orb, one
+  // Each hit tile gets a color-matched ring burst + glint + sparks, matched
+  // to that symbol's tier — higher-tier hits visually pop more. If this
+  // round is a combo "tile break" that earns +1x (comboGain > 0), one
   // flashed cell becomes an orb card — returns that cell's index (or -1)
   // so the caller can animate the multiplier flying from that exact tile.
-  async function flashHitCells(count, comboIndex, orbMult) {
+  async function flashHitCells(count, comboIndex, comboGain) {
     let orbCellIdx = -1;
     try {
       const eligible = cellSymbols
@@ -310,15 +340,15 @@
       idxList.forEach((i) => {
         const color = accentForSymbol(cellSymbols[i]);
         cells[i].classList.add("hit");
-        spawnSparks(cells[i], 5, color);
+        spawnSparks(cells[i], 4, color);
         spawnHitRing(cells[i], color);
         spawnHitGlint(cells[i]);
       });
 
-      if (orbMult > 0 && idxList.length > 0) {
+      if (comboGain > 0 && idxList.length > 0) {
         const orbIdx = idxList[Math.floor(Math.random() * idxList.length)];
         cells[orbIdx].innerHTML = CardArt.cardFor("orb").html;
-        spawnSparks(cells[orbIdx], 8, "#ffd166");
+        spawnSparks(cells[orbIdx], 6, "#ffd166");
         spawnHitRing(cells[orbIdx], "#ffd166");
         orbCellIdx = orbIdx;
       }
@@ -343,7 +373,7 @@
     winBanner.classList.toggle("big", isBig);
     winBanner.classList.add("show");
     animateCount(winBannerAmount, amount, isBig ? 1100 : 550, "+");
-    spawnCoinShower(isBig ? 34 : 12);
+    spawnCoinShower(isBig ? 22 : 8); // was 34/12 — fewer particles, same effect
 
     if (isBig) {
       reelsWrapEl.classList.remove("shake");
@@ -367,9 +397,6 @@
       Sound.playSuspenseBuildup(duration);
       await wait(duration);
     } finally {
-      // Handoff to the win banner: briefly crossfade the vignette out
-      // rather than yanking the "suspense" class off in the same tick the
-      // banner appears, so the two states blend instead of hard-cutting.
       reelsWrapEl.classList.add("fading-out");
       await wait(220);
       reelsWrapEl.classList.remove("suspense", "fading-out");
@@ -377,8 +404,8 @@
   }
 
   // Big full-screen "you won free spins!" moment: ringing bell, coin
-  // shower, and a Continue button. Auto-advances after a few seconds so
-  // autospin never gets stuck waiting on a click.
+  // shower, and a Continue button. Auto-advances so autospin never gets
+  // stuck waiting on a click.
   function showFreeSpinTriggerOverlay(freeSpinsAwarded) {
     return new Promise((resolve) => {
       const overlay = document.getElementById("fsTriggerOverlay");
@@ -395,15 +422,13 @@
       overlay.classList.remove("closing");
       overlay.classList.add("show");
       Sound.playBellRing(count);
-      spawnCoinShower(28);
+      spawnCoinShower(18); // was 28
 
       let done = false;
       function close() {
         if (done) return;
         done = true;
         continueBtn.removeEventListener("click", close);
-        // Play the scale-out/fade before actually hiding, so the overlay
-        // doesn't just vanish on opacity alone.
         overlay.classList.add("closing");
         setTimeout(() => {
           overlay.classList.remove("show", "closing");
@@ -444,7 +469,6 @@
         await wait(900);
         scatterCards.forEach((el) => el && el.classList.remove("ignite"));
 
-        // The big "you won free spins" moment, with its own Continue button.
         await showFreeSpinTriggerOverlay(freeSpinsAwarded);
         return;
       }
@@ -454,15 +478,16 @@
   }
 
   async function playResultSequence(result, bet) {
+    const maxMult = result.maxMultiplier || DEFAULT_MAX_MULTIPLIER;
     try {
       let runningMult = 1;
       for (let i = 0; i < result.rounds.length; i++) {
         const round = result.rounds[i];
-        const orbCellIdx = await flashHitCells(round.clusterSize, i, round.orbMult);
-        if (round.orbMult > 0) {
-          runningMult += round.orbMult;
-          Sound.playMultiplierHit(round.orbMult, runningMult);
-          await animateMultiplierHit(runningMult, orbCellIdx);
+        const orbCellIdx = await flashHitCells(round.clusterSize, i, round.comboGain);
+        if (round.comboGain > 0) {
+          runningMult += round.comboGain;
+          Sound.playMultiplierHit(round.comboGain, runningMult);
+          await animateMultiplierHit(runningMult, orbCellIdx, round.comboGain);
         }
       }
     } catch (err) {
@@ -472,6 +497,7 @@
     balanceEl.textContent = result.balance.toLocaleString();
     animateCount(lastwinEl, result.win, 500);
     multEl.textContent = result.multiplier + "x"; // reconcile with the server's final figure
+    multEl.classList.toggle("maxed", result.multiplier >= maxMult);
 
     if (result.freeSpins > 0) {
       fsBadge.style.display = "block";
@@ -539,7 +565,6 @@
         }, 200);
       }
       continueBtn.addEventListener("click", close);
-      // Auto-advances so autospin never gets stuck waiting on a click.
       setTimeout(close, 4200);
     });
   }

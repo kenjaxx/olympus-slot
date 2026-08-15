@@ -8,6 +8,14 @@
 // regardless of mute state — playTone() itself has no mute check at all;
 // only the music scheduler checks `musicMuted` before calling it.
 //
+// PERF: the background music loop used to layer a second, quieter
+// harmonic tone on top of 30% of notes. That's now down to 15% — it was
+// doubling oscillator creation on a third of every note for a difference
+// nobody could really hear. The music scheduler is also paused entirely
+// while the tab is hidden (Page Visibility API) and resumed automatically
+// when it becomes visible again, so a backgrounded tab doesn't keep
+// scheduling/synthesizing tones nobody can hear.
+//
 // AudioContext is created lazily on first sound (browser autoplay rules
 // require a user gesture first) — main.js kicks this off on the player's
 // first click on the game page.
@@ -158,11 +166,13 @@
     vibrate(15);
   }
 
-  function playMultiplierHit(orbValue, runningTotal) {
-    const steps = Math.min(6, Math.max(2, Math.round(orbValue / 3)));
+  // gainOrOrbValue is the combo step earned this hit (usually 1); kept the
+  // param name generic since callers just pass whatever "gain" value fits.
+  function playMultiplierHit(gainOrOrbValue, runningTotal) {
+    const steps = Math.min(6, Math.max(2, Math.round((gainOrOrbValue || 1) * 2)));
     for (let s = 0; s < steps; s++) {
       playTone({
-        freq: 500 + s * 90 + orbValue * 4,
+        freq: 500 + s * 90 + (gainOrOrbValue || 1) * 20,
         duration: 0.12,
         type: "square",
         volume: 0.13,
@@ -279,7 +289,10 @@
       playTone({ freq: freq / 2, duration: BEAT_SEC * 0.9, type: "sine", volume: 0.05 });
     } else {
       playTone({ freq, duration: EIGHTH_SEC * 0.85, type: "triangle", volume: 0.075 });
-      if (Math.random() < 0.3) {
+      // Was a 30% chance of a second, quieter harmonic oscillator on top
+      // of every note — halved to 15%. Barely audible difference, half
+      // the extra oscillator-creation cost over a session.
+      if (Math.random() < 0.15) {
         playTone({ freq: freq * 2, duration: EIGHTH_SEC * 0.4, type: "sine", volume: 0.02 });
       }
     }
@@ -320,6 +333,23 @@
 
   function isMuted() {
     return musicMuted;
+  }
+
+  // ---- Pause music scheduling while the tab is hidden ----
+  // Doesn't touch `musicMuted` (the player's own mute button) — just
+  // stops/resumes the scheduler around whatever the player's mute state
+  // already was, so nothing changes when they come back except that no
+  // CPU/battery was spent scheduling silent-to-them notes.
+  let wasRunningBeforeHide = false;
+  if (typeof document !== "undefined") {
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) {
+        wasRunningBeforeHide = musicRunning;
+        if (musicRunning) stopBackgroundMusic();
+      } else if (wasRunningBeforeHide) {
+        startBackgroundMusic();
+      }
+    });
   }
 
   window.Sound = {

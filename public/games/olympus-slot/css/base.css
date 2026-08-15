@@ -47,8 +47,8 @@ body {
   padding: calc(2.5rem + var(--safe-top)) 1rem calc(2.5rem + var(--safe-bottom));
   min-height: 100vh;
   /* ---- Layered background: soft color blooms + a scattered starfield ----
-     Replaces the old flat --ink fill, which read as plain black,
-     especially on mobile where the side-column decoration is hidden. */
+     This is a one-time paint (nothing here animates), so it isn't part
+     of the per-frame cost — left as-is. */
   background:
     radial-gradient(ellipse 700px 400px at 50% -10%, #2a1f4d 0%, transparent 60%),
     radial-gradient(ellipse 600px 500px at 100% 100%, #201640 0%, transparent 55%),
@@ -77,9 +77,6 @@ body {
   gap: 14px;
   margin-bottom: 0.6rem;
 }
-/* Slow idle sway on the header sprigs — a subtle "breathing" motion so the
-   header doesn't feel static while waiting for the next spin. Mirrored
-   left/right so they don't sway in lockstep. */
 .sprig {
   color: var(--gold-deep);
   flex: 0 0 auto;
@@ -139,9 +136,7 @@ h1 {
   box-shadow: 0 0 6px 1px rgba(212, 175, 55, 0.6);
 }
 
-/* ---- Player / settings rows ----
-   flex-wrap lets these gracefully drop to a second line on narrow phones
-   instead of squeezing controls into one row and clipping/overflowing. */
+/* ---- Player / settings rows ---- */
 .player-row {
   display: flex;
   flex-wrap: wrap;
@@ -179,14 +174,10 @@ h1 {
 }
 .player-row button:hover { border-color: var(--gold-deep); background: #2e2152; }
 
-/* Row that now holds only the Paytable button */
 .player-row-single button {
   flex: 1 1 auto;
 }
 
-/* ---- "Add funds" row — pulled into the same gilded-button language as
-   the bet quick-buttons/spin button instead of a plain default input, so
-   it doesn't read as a leftover dev/debug control. ---- */
 .player-row:has(#loadAmount) {
   background: var(--panel);
   border: 1px solid var(--panel-line);
@@ -235,13 +226,18 @@ h1 {
   font-family: var(--font-body);
 }
 
-/* ---- Main panel ---- */
+/* ---- Main panel ----
+   PERF: `contain: layout style paint` isolates everything that moves
+   inside the panel (reels, sparks, coins, banners) from the rest of the
+   page — the browser doesn't need to consider whether changes in here
+   could affect layout/paint outside this box, and vice versa. */
 .card {
   background: linear-gradient(180deg, var(--panel-2), var(--panel));
   border-radius: 16px;
   padding: 1.25rem;
   border: 1px solid var(--panel-line);
   box-shadow: 0 20px 50px -20px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.04);
+  contain: layout style paint;
 }
 
 .stats-row { display: flex; justify-content: space-between; margin-bottom: 0.5rem; gap: 6px; }
@@ -315,9 +311,6 @@ h1 {
   transition: box-shadow 0.2s, border-color 0.2s;
 }
 
-/* Shown when the typed/quick-button bet exceeds the slider's fixed
-   comfortable ceiling — otherwise the handle just silently pins at the
-   end and the "why won't the slider move" moment has no explanation. */
 .bet-row.bet-overflow input[type="number"] {
   border-color: var(--gold);
   box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.35);
@@ -423,9 +416,6 @@ h1 {
   font-size: 15px;
 }
 
-/* Faint fluted columns pinned to the outer edges of the viewport — pure
-   background texture, hidden on narrow screens so it never crowds the app
-   (mobile relies on the starfield/blooms in body's background instead). */
 .temple-columns {
   position: fixed;
   top: 0;
@@ -461,10 +451,17 @@ h1 {
   .temple-columns { display: none; }
 }
 
-/* Ambient idle glow on the reel frame — now animates opacity of a glow
-   layer instead of the box-shadow value itself, so the compositor can
-   handle it without repainting every frame. Suppressed while spinning. */
-.reels-wrap { border-radius: 10px; position: relative; }
+/* ---- Ambient idle glow on the reel frame ----
+   PERF: this used to animate `box-shadow` directly on `.reels`, which is
+   NOT compositor-accelerated — the browser repaints on every frame. Now
+   it's a separate `::after` layer with a fixed box-shadow whose OPACITY
+   is what animates, which the compositor can handle without repainting
+   anything underneath. Suppressed entirely while the reels are dropping. */
+.reels-wrap {
+  border-radius: 10px;
+  position: relative;
+  contain: layout paint;
+}
 .reels-wrap::after {
   content: "";
   position: absolute;
@@ -483,6 +480,9 @@ h1 {
 @keyframes idleGlowFade {
   0%, 100% { opacity: 0; }
   50%      { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .reels-wrap::after { animation: none; }
 }
 
 /* ---- Paytable modal ---- */
@@ -513,7 +513,6 @@ h1 {
   box-shadow: 0 24px 60px -20px rgba(0,0,0,0.7), 0 0 0 1px rgba(212,175,55,0.15);
   position: relative;
 }
-/* Thin gold-foil top edge on the sheet, echoing the card tiles' foil border */
 .paytable-sheet::before {
   content: "";
   position: absolute;
@@ -548,9 +547,6 @@ h1 {
 
 .paytable-list { list-style: none; margin: 0 0 0.9rem; padding: 0; }
 
-/* Each row now reads as a small gilded card rather than a flat list line,
-   and rows stagger in on open (delay set inline per-row by paytable.js)
-   instead of all appearing at once. */
 .paytable-row {
   display: flex;
   align-items: center;
@@ -632,9 +628,6 @@ h1 {
   .fs-total-amount { font-size: 32px; }
 }
 
-/* Small phones (iPhone SE class, ~320-340px): the stats row wraps to a
-   3-up grid — give each block a touch more breathing room and shrink the
-   value font a little further so nothing clips against its neighbor. */
 @media (max-width: 340px) {
   .stats-row { flex-wrap: wrap; row-gap: 10px; column-gap: 4px; }
   .stats-row > div { flex: 1 1 30%; min-width: 0; }
@@ -674,10 +667,6 @@ h1 {
   background: var(--panel);
   color: var(--text-faint);
 }
-.player-row-single { display: flex; gap: 8px; }
-.player-row-single button { flex: 1 1 auto; }
-.mute-btn { flex: 0 0 auto !important; width: 44px; min-width: 44px; font-size: 16px; }
-.mute-btn[aria-pressed="true"] { border-color: var(--gold-deep); background: var(--panel); color: var(--text-faint); }
 
 .bet-row input:disabled { opacity: 0.5; }
 .quickbtn:disabled { opacity: 0.4; cursor: not-allowed; }
