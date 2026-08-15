@@ -42,43 +42,158 @@
 
       <p id="msg" class="msg">Pick your colors and roll the box</p>
 
-      <div class="bet-grid">
+      <div class="bet-grid" id="betGrid">
+
         <div class="color-tile tile-red" data-color="red">
-          <div class="swatch"></div>
-          <span class="color-name">Red</span>
-          <input type="number" min="0" step="10" value="0" />
+          <div class="tile-top">
+            <span class="swatch"></span>
+            <span class="color-name">Red</span>
+            <span class="stake-amount" data-color="red">0</span>
+          </div>
           <div class="result-tag"></div>
+          <div class="quick-row">
+            <button type="button" class="qbtn" data-amt="100">100</button>
+            <button type="button" class="qbtn" data-amt="200">200</button>
+            <button type="button" class="qbtn" data-amt="500">500</button>
+            <button type="button" class="qbtn" data-amt="1000">1K</button>
+          </div>
+          <div class="action-row">
+            <button type="button" class="abtn" data-action="2x">2×</button>
+            <button type="button" class="abtn abtn-max" data-action="max">Max</button>
+            <button type="button" class="abtn abtn-custom" data-action="custom">Custom</button>
+          </div>
+          <div class="custom-row" hidden>
+            <input type="number" min="0" step="10" class="custom-input" placeholder="Amount" />
+            <button type="button" class="custom-set">Set</button>
+            <button type="button" class="custom-cancel">✕</button>
+          </div>
         </div>
+
         <div class="color-tile tile-yellow" data-color="yellow">
-          <div class="swatch"></div>
-          <span class="color-name">Yellow</span>
-          <input type="number" min="0" step="10" value="0" />
+          <div class="tile-top">
+            <span class="swatch"></span>
+            <span class="color-name">Yellow</span>
+            <span class="stake-amount" data-color="yellow">0</span>
+          </div>
           <div class="result-tag"></div>
+          <div class="quick-row">
+            <button type="button" class="qbtn" data-amt="100">100</button>
+            <button type="button" class="qbtn" data-amt="200">200</button>
+            <button type="button" class="qbtn" data-amt="500">500</button>
+            <button type="button" class="qbtn" data-amt="1000">1K</button>
+          </div>
+          <div class="action-row">
+            <button type="button" class="abtn" data-action="2x">2×</button>
+            <button type="button" class="abtn abtn-max" data-action="max">Max</button>
+            <button type="button" class="abtn abtn-custom" data-action="custom">Custom</button>
+          </div>
+          <div class="custom-row" hidden>
+            <input type="number" min="0" step="10" class="custom-input" placeholder="Amount" />
+            <button type="button" class="custom-set">Set</button>
+            <button type="button" class="custom-cancel">✕</button>
+          </div>
         </div>
+
         <div class="color-tile tile-blue" data-color="blue">
-          <div class="swatch"></div>
-          <span class="color-name">Blue</span>
-          <input type="number" min="0" step="10" value="0" />
+          <div class="tile-top">
+            <span class="swatch"></span>
+            <span class="color-name">Blue</span>
+            <span class="stake-amount" data-color="blue">0</span>
+          </div>
           <div class="result-tag"></div>
+          <div class="quick-row">
+            <button type="button" class="qbtn" data-amt="100">100</button>
+            <button type="button" class="qbtn" data-amt="200">200</button>
+            <button type="button" class="qbtn" data-amt="500">500</button>
+            <button type="button" class="qbtn" data-amt="1000">1K</button>
+          </div>
+          <div class="action-row">
+            <button type="button" class="abtn" data-action="2x">2×</button>
+            <button type="button" class="abtn abtn-max" data-action="max">Max</button>
+            <button type="button" class="abtn abtn-custom" data-action="custom">Custom</button>
+          </div>
+          <div class="custom-row" hidden>
+            <input type="number" min="0" step="10" class="custom-input" placeholder="Amount" />
+            <button type="button" class="custom-set">Set</button>
+            <button type="button" class="custom-cancel">✕</button>
+          </div>
         </div>
+
         <div class="color-tile tile-green" data-color="green">
-          <div class="swatch"></div>
-          <span class="color-name">Green</span>
-          <input type="number" min="0" step="10" value="0" />
+          <div class="tile-top">
+            <span class="swatch"></span>
+            <span class="color-name">Green</span>
+            <span class="stake-amount" data-color="green">0</span>
+          </div>
           <div class="result-tag"></div>
+          <div class="quick-row">
+            <button type="button" class="qbtn" data-amt="100">100</button>
+            <button type="button" class="qbtn" data-amt="200">200</button>
+            <button type="button" class="qbtn" data-amt="500">500</button>
+            <button type="button" class="qbtn" data-amt="1000">1K</button>
+          </div>
+          <div class="action-row">
+            <button type="button" class="abtn" data-action="2x">2×</button>
+            <button type="button" class="abtn abtn-max" data-action="max">Max</button>
+            <button type="button" class="abtn abtn-custom" data-action="custom">Custom</button>
+          </div>
+          <div class="custom-row" hidden>
+            <input type="number" min="0" step="10" class="custom-input" placeholder="Amount" />
+            <button type="button" class="custom-set">Set</button>
+            <button type="button" class="custom-cancel">✕</button>
+          </div>
         </div>
+
         <div class="color-tile tile-white" data-color="white">
-          <div class="swatch"></div>
-          <span class="color-name">White</span>
-          <input type="number" min="0" step="10" value="0" />
+          <div class="tile-top">
+            <span class="swatch"></span>
+            <span class="color-name">White</span>
+            <span class="stake-amount" data-color="white">0</span>
+          </div>
           <div class="result-tag"></div>
+          <div class="quick-row">
+            <button type="button" class="qbtn" data-amt="100">100</button>
+            <button type="button" class="qbtn" data-amt="200">200</button>
+            <button type="button" class="qbtn" data-amt="500">500</button>
+            <button type="button" class="qbtn" data-amt="1000">1K</button>
+          </div>
+          <div class="action-row">
+            <button type="button" class="abtn" data-action="2x">2×</button>
+            <button type="button" class="abtn abtn-max" data-action="max">Max</button>
+            <button type="button" class="abtn abtn-custom" data-action="custom">Custom</button>
+          </div>
+          <div class="custom-row" hidden>
+            <input type="number" min="0" step="10" class="custom-input" placeholder="Amount" />
+            <button type="button" class="custom-set">Set</button>
+            <button type="button" class="custom-cancel">✕</button>
+          </div>
         </div>
+
         <div class="color-tile tile-pink" data-color="pink">
-          <div class="swatch"></div>
-          <span class="color-name">Pink</span>
-          <input type="number" min="0" step="10" value="0" />
+          <div class="tile-top">
+            <span class="swatch"></span>
+            <span class="color-name">Pink</span>
+            <span class="stake-amount" data-color="pink">0</span>
+          </div>
           <div class="result-tag"></div>
+          <div class="quick-row">
+            <button type="button" class="qbtn" data-amt="100">100</button>
+            <button type="button" class="qbtn" data-amt="200">200</button>
+            <button type="button" class="qbtn" data-amt="500">500</button>
+            <button type="button" class="qbtn" data-amt="1000">1K</button>
+          </div>
+          <div class="action-row">
+            <button type="button" class="abtn" data-action="2x">2×</button>
+            <button type="button" class="abtn abtn-max" data-action="max">Max</button>
+            <button type="button" class="abtn abtn-custom" data-action="custom">Custom</button>
+          </div>
+          <div class="custom-row" hidden>
+            <input type="number" min="0" step="10" class="custom-input" placeholder="Amount" />
+            <button type="button" class="custom-set">Set</button>
+            <button type="button" class="custom-cancel">✕</button>
+          </div>
         </div>
+
       </div>
 
       <p class="total-stake">Total staked: <strong id="totalStake">0</strong></p>
