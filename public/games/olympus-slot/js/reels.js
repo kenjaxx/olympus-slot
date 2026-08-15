@@ -34,7 +34,7 @@
   const winBannerAmount = document.getElementById("winBannerAmount");
   const netLineEl = document.getElementById("netLine");
 
-  const DEFAULT_MAX_MULTIPLIER = 16;
+  const DEFAULT_MAX_MULTIPLIER = 50;
 
   let cells = [];
   let cellSymbols = [];
