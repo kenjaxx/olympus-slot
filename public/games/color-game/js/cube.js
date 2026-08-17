@@ -1,24 +1,22 @@
 // cube.js
 // Renders three tumbling dice that roll onto a wooden table and land
 // inside an open, teal treasure-box tray — a decorative flourish wrapped
-// around the actual result. This module never decides the outcome:
-// main.js always calls roll(winningColor) with a color that already
-// came back from the server's /api/color/roll response.
+// around the actual result.
 //
-// The CENTER die always lands on the winning color, so it's a direct,
-// glanceable readout of the round's result. The two side dice land on
-// independently-random colors purely for visual flavor (real dice in a
-// tray rarely land uniform), and are re-randomized on every roll.
+// IMPORTANT: all three dice now show the REAL server-decided colors.
+// Previously only the center die mattered (the other two were random
+// "for show"), but the game mechanic uses all 3 dice now, so every one
+// of them has to be the truth — main.js/color.js always calls
+// roll([colorA, colorB, colorC]) with the exact array that came back
+// from the server's /api/color/roll response.
 //
 // Every die rests at a fixed isometric tilt (BASE_TILT_X/Y) on top of
-// whatever rotation brings its winning face to the front — so you
+// whatever rotation brings its landed face to the front — so you
 // always see the top edge and a side edge of the cube, like a real die
 // sitting on a table, instead of a single face viewed dead-on (which
 // just reads as a flat colored square).
 
 (function () {
-  const COLORS = ["red", "yellow", "blue", "green", "white", "pink"];
-
   const BASE_TILT_X = -16;
   const BASE_TILT_Y = 24;
 
@@ -48,14 +46,6 @@
 
   let dice = []; // { el, rx, ry } current rotation state per die
   let boxEl = null;
-
-  function randomColor(exclude) {
-    let c;
-    do {
-      c = COLORS[Math.floor(Math.random() * COLORS.length)];
-    } while (c === exclude && COLORS.length > 1);
-    return c;
-  }
 
   function faceHTML() {
     return (
@@ -120,18 +110,20 @@
     if (boxEl) boxEl.classList.remove("impact");
   }
 
-  function roll(winningColor) {
+  // diceColors: an array of exactly 3 color keys, in order, already
+  // decided by the server — one per die. This is the real game result;
+  // nothing here is randomized for show anymore.
+  function roll(diceColors) {
     return new Promise((resolve) => {
       if (!dice.length) {
         resolve();
         return;
       }
 
-      const results = [
-        randomColor(winningColor),
-        winningColor, // center die always shows the real result
-        randomColor(winningColor),
-      ];
+      const results =
+        Array.isArray(diceColors) && diceColors.length === 3
+          ? diceColors
+          : ["red", "red", "red"]; // defensive fallback only — should never actually trigger
 
       const promises = dice.map((d, i) => {
         const layout = DIE_LAYOUT[i];

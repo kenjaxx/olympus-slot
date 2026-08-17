@@ -40,158 +40,97 @@
 
       <div id="cubeContainer"></div>
 
-      <p id="msg" class="msg">Pick your colors and roll the box</p>
+      <!-- ---- Winning-dice reveal — always shows the actual 3 dice, and
+           a line-by-line breakdown of how each of your bets did ---- -->
+      <div class="win-banner" id="winBanner">
+        <div class="win-dice-row" id="winDiceRow">
+          <span class="win-die-swatch" id="winDie0">?</span>
+          <span class="win-die-swatch" id="winDie1">?</span>
+          <span class="win-die-swatch" id="winDie2">?</span>
+        </div>
+        <div class="win-banner-copy">
+          <p class="win-banner-label" id="winBannerLabel">No rolls yet</p>
+          <p class="win-banner-text" id="winBannerText">Place a bet, then tap Roll to reveal all 3 dice.</p>
+          <ul class="win-bet-lines" id="winBetLines"></ul>
+        </div>
+      </div>
 
-      <div class="bet-grid" id="betGrid">
+      <p id="msg" class="msg">Pick a bet amount, then tap a color to bet on it</p>
 
-        <div class="color-tile tile-red" data-color="red">
-          <div class="tile-top">
-            <span class="swatch"></span>
-            <span class="color-name">Red</span>
-            <span class="stake-amount" data-color="red">0</span>
-          </div>
-          <div class="result-tag"></div>
-          <div class="quick-row">
-            <button type="button" class="qbtn" data-amt="100">100</button>
-            <button type="button" class="qbtn" data-amt="200">200</button>
-            <button type="button" class="qbtn" data-amt="500">500</button>
-            <button type="button" class="qbtn" data-amt="1000">1K</button>
-          </div>
-          <div class="action-row">
-            <button type="button" class="abtn" data-action="2x">2×</button>
-            <button type="button" class="abtn abtn-max" data-action="max">Max</button>
-            <button type="button" class="abtn abtn-custom" data-action="custom">Custom</button>
-          </div>
-          <div class="custom-row" hidden>
-            <input type="number" min="0" step="10" class="custom-input" placeholder="Amount" />
-            <button type="button" class="custom-set">Set</button>
-            <button type="button" class="custom-cancel">✕</button>
-          </div>
+      <!-- ---- Recent-rolls history strip ---- -->
+      <div class="history-row" id="historyRow" hidden>
+        <span class="history-label">Recent rolls</span>
+        <div class="history-dots" id="historyDots"></div>
+      </div>
+
+      <!-- ---- Horizontal bet-amount selector ---- -->
+      <p class="section-label">Bet amount</p>
+      <div class="bet-amount-row" id="betAmountRow">
+        <button type="button" class="chip amount-chip" data-amt="20">20</button>
+        <button type="button" class="chip amount-chip" data-amt="50">50</button>
+        <button type="button" class="chip amount-chip active" data-amt="100">100</button>
+        <button type="button" class="chip amount-chip" data-amt="500">500</button>
+        <button type="button" class="chip amount-chip" data-amt="1000">1000</button>
+        <button type="button" class="chip amount-chip chip-custom" id="customAmountBtn" data-custom="1">Custom</button>
+      </div>
+
+      <div class="custom-amount-row" id="customAmountRow" hidden>
+        <input type="number" id="customAmountInput" min="10" step="10" placeholder="Custom amount" />
+        <button type="button" id="customAmountSet">Set</button>
+        <button type="button" id="customAmountCancel">✕</button>
+      </div>
+
+      <!-- ---- Color grid — tap a color to place the selected amount on it ---- -->
+      <p class="section-label">Bet on colors</p>
+      <p class="odds-hint">Three dice roll every round. A color you bet on pays 1:1 if it matches 1 die, 1:2 for 2 dice, and 1:3 if all three land on it — your stake is returned on top of the win. No match loses the stake. All 3 dice are decided on the server before they even start tumbling.</p>
+      <div class="color-grid" id="colorGrid">
+
+        <div class="color-chip" data-color="red" tabindex="0" role="button" aria-label="Bet on red">
+          <button type="button" class="chip-clear" title="Clear red bet" aria-label="Clear red bet" hidden>✕</button>
+          <span class="chip-swatch sw-red"></span>
+          <span class="chip-name">Red</span>
+          <span class="chip-stake" data-color="red">0</span>
+          <span class="chip-tag"></span>
         </div>
 
-        <div class="color-tile tile-yellow" data-color="yellow">
-          <div class="tile-top">
-            <span class="swatch"></span>
-            <span class="color-name">Yellow</span>
-            <span class="stake-amount" data-color="yellow">0</span>
-          </div>
-          <div class="result-tag"></div>
-          <div class="quick-row">
-            <button type="button" class="qbtn" data-amt="100">100</button>
-            <button type="button" class="qbtn" data-amt="200">200</button>
-            <button type="button" class="qbtn" data-amt="500">500</button>
-            <button type="button" class="qbtn" data-amt="1000">1K</button>
-          </div>
-          <div class="action-row">
-            <button type="button" class="abtn" data-action="2x">2×</button>
-            <button type="button" class="abtn abtn-max" data-action="max">Max</button>
-            <button type="button" class="abtn abtn-custom" data-action="custom">Custom</button>
-          </div>
-          <div class="custom-row" hidden>
-            <input type="number" min="0" step="10" class="custom-input" placeholder="Amount" />
-            <button type="button" class="custom-set">Set</button>
-            <button type="button" class="custom-cancel">✕</button>
-          </div>
+        <div class="color-chip" data-color="yellow" tabindex="0" role="button" aria-label="Bet on yellow">
+          <button type="button" class="chip-clear" title="Clear yellow bet" aria-label="Clear yellow bet" hidden>✕</button>
+          <span class="chip-swatch sw-yellow"></span>
+          <span class="chip-name">Yellow</span>
+          <span class="chip-stake" data-color="yellow">0</span>
+          <span class="chip-tag"></span>
         </div>
 
-        <div class="color-tile tile-blue" data-color="blue">
-          <div class="tile-top">
-            <span class="swatch"></span>
-            <span class="color-name">Blue</span>
-            <span class="stake-amount" data-color="blue">0</span>
-          </div>
-          <div class="result-tag"></div>
-          <div class="quick-row">
-            <button type="button" class="qbtn" data-amt="100">100</button>
-            <button type="button" class="qbtn" data-amt="200">200</button>
-            <button type="button" class="qbtn" data-amt="500">500</button>
-            <button type="button" class="qbtn" data-amt="1000">1K</button>
-          </div>
-          <div class="action-row">
-            <button type="button" class="abtn" data-action="2x">2×</button>
-            <button type="button" class="abtn abtn-max" data-action="max">Max</button>
-            <button type="button" class="abtn abtn-custom" data-action="custom">Custom</button>
-          </div>
-          <div class="custom-row" hidden>
-            <input type="number" min="0" step="10" class="custom-input" placeholder="Amount" />
-            <button type="button" class="custom-set">Set</button>
-            <button type="button" class="custom-cancel">✕</button>
-          </div>
+        <div class="color-chip" data-color="blue" tabindex="0" role="button" aria-label="Bet on blue">
+          <button type="button" class="chip-clear" title="Clear blue bet" aria-label="Clear blue bet" hidden>✕</button>
+          <span class="chip-swatch sw-blue"></span>
+          <span class="chip-name">Blue</span>
+          <span class="chip-stake" data-color="blue">0</span>
+          <span class="chip-tag"></span>
         </div>
 
-        <div class="color-tile tile-green" data-color="green">
-          <div class="tile-top">
-            <span class="swatch"></span>
-            <span class="color-name">Green</span>
-            <span class="stake-amount" data-color="green">0</span>
-          </div>
-          <div class="result-tag"></div>
-          <div class="quick-row">
-            <button type="button" class="qbtn" data-amt="100">100</button>
-            <button type="button" class="qbtn" data-amt="200">200</button>
-            <button type="button" class="qbtn" data-amt="500">500</button>
-            <button type="button" class="qbtn" data-amt="1000">1K</button>
-          </div>
-          <div class="action-row">
-            <button type="button" class="abtn" data-action="2x">2×</button>
-            <button type="button" class="abtn abtn-max" data-action="max">Max</button>
-            <button type="button" class="abtn abtn-custom" data-action="custom">Custom</button>
-          </div>
-          <div class="custom-row" hidden>
-            <input type="number" min="0" step="10" class="custom-input" placeholder="Amount" />
-            <button type="button" class="custom-set">Set</button>
-            <button type="button" class="custom-cancel">✕</button>
-          </div>
+        <div class="color-chip" data-color="green" tabindex="0" role="button" aria-label="Bet on green">
+          <button type="button" class="chip-clear" title="Clear green bet" aria-label="Clear green bet" hidden>✕</button>
+          <span class="chip-swatch sw-green"></span>
+          <span class="chip-name">Green</span>
+          <span class="chip-stake" data-color="green">0</span>
+          <span class="chip-tag"></span>
         </div>
 
-        <div class="color-tile tile-white" data-color="white">
-          <div class="tile-top">
-            <span class="swatch"></span>
-            <span class="color-name">White</span>
-            <span class="stake-amount" data-color="white">0</span>
-          </div>
-          <div class="result-tag"></div>
-          <div class="quick-row">
-            <button type="button" class="qbtn" data-amt="100">100</button>
-            <button type="button" class="qbtn" data-amt="200">200</button>
-            <button type="button" class="qbtn" data-amt="500">500</button>
-            <button type="button" class="qbtn" data-amt="1000">1K</button>
-          </div>
-          <div class="action-row">
-            <button type="button" class="abtn" data-action="2x">2×</button>
-            <button type="button" class="abtn abtn-max" data-action="max">Max</button>
-            <button type="button" class="abtn abtn-custom" data-action="custom">Custom</button>
-          </div>
-          <div class="custom-row" hidden>
-            <input type="number" min="0" step="10" class="custom-input" placeholder="Amount" />
-            <button type="button" class="custom-set">Set</button>
-            <button type="button" class="custom-cancel">✕</button>
-          </div>
+        <div class="color-chip" data-color="white" tabindex="0" role="button" aria-label="Bet on white">
+          <button type="button" class="chip-clear" title="Clear white bet" aria-label="Clear white bet" hidden>✕</button>
+          <span class="chip-swatch sw-white"></span>
+          <span class="chip-name">White</span>
+          <span class="chip-stake" data-color="white">0</span>
+          <span class="chip-tag"></span>
         </div>
 
-        <div class="color-tile tile-pink" data-color="pink">
-          <div class="tile-top">
-            <span class="swatch"></span>
-            <span class="color-name">Pink</span>
-            <span class="stake-amount" data-color="pink">0</span>
-          </div>
-          <div class="result-tag"></div>
-          <div class="quick-row">
-            <button type="button" class="qbtn" data-amt="100">100</button>
-            <button type="button" class="qbtn" data-amt="200">200</button>
-            <button type="button" class="qbtn" data-amt="500">500</button>
-            <button type="button" class="qbtn" data-amt="1000">1K</button>
-          </div>
-          <div class="action-row">
-            <button type="button" class="abtn" data-action="2x">2×</button>
-            <button type="button" class="abtn abtn-max" data-action="max">Max</button>
-            <button type="button" class="abtn abtn-custom" data-action="custom">Custom</button>
-          </div>
-          <div class="custom-row" hidden>
-            <input type="number" min="0" step="10" class="custom-input" placeholder="Amount" />
-            <button type="button" class="custom-set">Set</button>
-            <button type="button" class="custom-cancel">✕</button>
-          </div>
+        <div class="color-chip" data-color="pink" tabindex="0" role="button" aria-label="Bet on pink">
+          <button type="button" class="chip-clear" title="Clear pink bet" aria-label="Clear pink bet" hidden>✕</button>
+          <span class="chip-swatch sw-pink"></span>
+          <span class="chip-name">Pink</span>
+          <span class="chip-stake" data-color="pink">0</span>
+          <span class="chip-tag"></span>
         </div>
 
       </div>
@@ -207,6 +146,6 @@
   </div>
 
   <script src="js/cube.js"></script>
-  <script src="js/main.js"></script>
+  <script src="js/color.js"></script>
 </body>
 </html>
