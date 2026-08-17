@@ -1,7 +1,5 @@
 // colorGame.js
-// Server-side logic for the Color Game — genuinely uses all 3 dice now
-// (previously only one "winning color" was picked and the other two dice
-// were just cosmetic on the client).
+// Server-side logic for the Color Game — genuinely uses all 3 dice.
 //
 // Mechanic: three dice are rolled, each independently landing on one of
 // six colors. For every color the player bet on, count how many of the

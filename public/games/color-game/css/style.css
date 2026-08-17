@@ -772,3 +772,95 @@ h1 {
   .chip-name { font-size: 10px; }
   .chip-stake { font-size: 13px; }
 }
+/* ---------------------------------------------------------------------
+   ADDITIONS — append to public/games/color-game/css/style.css
+   Styles for the current 3-dice win banner markup (#winDie0/1/2,
+   #winBetLines) which the HTML already uses but nothing styled yet,
+   plus grouped per-roll history dots (3 dice per roll instead of 1).
+--------------------------------------------------------------------- */
+
+.win-dice-row {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 6px;
+}
+
+.win-die-swatch {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-faint);
+  background: var(--panel-2);
+  border: 1px solid var(--panel-line);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+.win-die-swatch.swatch-pending {
+  animation: swatchPulse 0.9s ease-in-out infinite;
+}
+.win-die-swatch.sw-red { background: var(--clr-red); border-color: rgba(0,0,0,0.25); }
+.win-die-swatch.sw-yellow { background: var(--clr-yellow); border-color: rgba(0,0,0,0.25); }
+.win-die-swatch.sw-blue { background: var(--clr-blue); border-color: rgba(0,0,0,0.25); }
+.win-die-swatch.sw-green { background: var(--clr-green); border-color: rgba(0,0,0,0.25); }
+.win-die-swatch.sw-white { background: var(--clr-white); border-color: rgba(0,0,0,0.25); }
+.win-die-swatch.sw-pink { background: var(--clr-pink); border-color: rgba(0,0,0,0.25); }
+
+/* Per-bet breakdown list under the label/text */
+.win-bet-lines {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.bet-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  line-height: 1.3;
+}
+.bet-line-color {
+  width: 9px;
+  height: 9px;
+  border-radius: 3px;
+  flex: 0 0 auto;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+.bet-line-name {
+  font-weight: 600;
+  color: var(--text-dim);
+  flex: 0 0 auto;
+}
+.bet-line-detail {
+  color: var(--text-faint);
+  flex: 1;
+}
+.bet-line-amount {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  flex: 0 0 auto;
+}
+.bet-line-win .bet-line-amount { color: var(--gold-bright); }
+.bet-line-lose .bet-line-amount { color: var(--text-faint); }
+
+/* Each roll now shows as a small cluster of 3 dots instead of 1 */
+.history-roll {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 999px;
+}
+.history-roll.latest {
+  box-shadow: 0 0 0 2px var(--panel), 0 0 0 3px var(--gold);
+}
+.history-roll .history-dot {
+  width: 10px;
+  height: 10px;
+}
