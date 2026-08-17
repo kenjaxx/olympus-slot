@@ -43,9 +43,6 @@ app.post("/api/spin", (req, res) => {
 
   let numericBet;
   if (usingFreeSpin) {
-    // Free spins ALWAYS use the bet that triggered the bonus round — the
-    // slider/quick-buttons have no effect here, exactly like a real
-    // scatter-slot bonus round.
     numericBet = p.freeSpinBet || MIN_BET;
   } else {
     numericBet = Math.round(Number(bet));
@@ -63,21 +60,14 @@ app.post("/api/spin", (req, res) => {
     p.balance -= numericBet;
   }
 
-  // Carry the accumulated bonus-round multiplier into this spin (0 for
-  // ordinary paid spins, since the trail only exists during free spins).
   const carryIn = usingFreeSpin ? p.freeSpinMultiplier || 0 : 0;
   const result = game.resolveSpin(numericBet, carryIn);
 
   if (result.freeSpinsAwarded) {
     if (!usingFreeSpin) {
-      // A fresh bonus round just started on a paid spin — lock in the
-      // bet for every free spin that follows, and start the multiplier
-      // trail at zero.
       p.freeSpinBet = numericBet;
       p.freeSpinMultiplier = 0;
     }
-    // If this happens WHILE already in free spins, it's a retrigger —
-    // more spins are added and the multiplier trail keeps building.
     p.freeSpins += result.freeSpinsAwarded;
   }
 
@@ -88,8 +78,6 @@ app.post("/api/spin", (req, res) => {
   p.balance += result.win;
 
   if (p.freeSpins === 0) {
-    // Bonus round fully finished — clear the trail and the locked bet
-    // so the next trigger starts fresh.
     p.freeSpinMultiplier = 0;
     p.freeSpinBet = 0;
   }
@@ -116,10 +104,10 @@ app.post("/api/reset/:player", (req, res) => {
 
 // ---- Color Game endpoint ----
 // Body: { player, bets: { red: 20, blue: 10, ... } }
-// Any subset of the 6 colors can carry a bet in the same round. Every
-// dollar wagered on a color that does NOT match the roll is simply lost
-// (already deducted); every dollar on the matching color pays out at
-// colorGame's payout multiplier.
+// Any subset of the 6 colors can carry a bet in the same round. Three
+// dice are rolled server-side; every bet color is paid according to how
+// many of the 3 dice matched it (see colorGame.js for the payout table).
+// A color with zero matches loses its entire stake (already deducted).
 app.post("/api/color/roll", (req, res) => {
   const { player, bets } = req.body;
   if (!player) {
@@ -131,8 +119,6 @@ app.post("/api/color/roll", (req, res) => {
 
   const p = getPlayer(player);
 
-  // Validate + total the bets server-side. Unknown colors are rejected
-  // outright; non-positive amounts are just skipped.
   let total = 0;
   const cleanBets = {};
   for (const [color, amountRaw] of Object.entries(bets)) {
@@ -160,7 +146,7 @@ app.post("/api/color/roll", (req, res) => {
   p.balance += result.totalWin;
 
   res.json({
-    ...result,
+    ...result, // dice, results, matches, totalWin, payoutPerMatch
     bets: cleanBets,
     totalBet: total,
     balance: p.balance,
@@ -184,23 +170,17 @@ app.post("/api/admin/winrate", (req, res) => {
 
 app.get("/api/admin/color-odds", (req, res) => {
   if (req.headers["x-admin-key"] !== ADMIN_KEY) return res.sendStatus(403);
-  res.json({ weights: colorGame.getWeights(), payoutMultiplier: colorGame.getPayoutMultiplier() });
+  res.json({ weights: colorGame.getWeights(), payoutPerMatch: colorGame.getPayoutPerMatch() });
 });
 
 app.post("/api/admin/color-odds", (req, res) => {
   if (req.headers["x-admin-key"] !== ADMIN_KEY) return res.sendStatus(403);
-  const { color, weight, payoutMultiplier } = req.body;
+  const { color, weight, payoutPerMatch } = req.body;
   if (color) colorGame.setWeight(color, weight);
-  if (payoutMultiplier !== undefined) colorGame.setPayoutMultiplier(payoutMultiplier);
-  res.json({ weights: colorGame.getWeights(), payoutMultiplier: colorGame.getPayoutMultiplier() });
+  if (payoutPerMatch !== undefined) colorGame.setPayoutPerMatch(payoutPerMatch);
+  res.json({ weights: colorGame.getWeights(), payoutPerMatch: colorGame.getPayoutPerMatch() });
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Olympus slot running at http://localhost:${PORT}`);
-});
-
-// Adds a player-chosen amount to a player's balance (the "Add funds" UI control).
 app.post("/api/topup/:player", (req, res) => {
   const p = getPlayer(req.params.player);
   const amount = Math.round(Number(req.body.amount));
@@ -209,4 +189,9 @@ app.post("/api/topup/:player", (req, res) => {
   }
   p.balance += amount;
   res.json(p);
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Olympus slot running at http://localhost:${PORT}`);
 });
